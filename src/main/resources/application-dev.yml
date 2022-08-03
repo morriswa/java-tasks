@@ -1,0 +1,20 @@
+server:
+  port: 8080
+  error.include-message: always
+
+spring:
+  jpa.hibernate.ddl-auto: create-drop
+  banner.location: classpath:banner.txt
+
+hibernate:
+  dialect: org.hibernate.dialect.PostgreSQLDialect
+  show-sql: true
+
+## DEV ENV
+auth0.audience: "http://localhost:8080/tasks/dev/"
+spring.security.oauth2.resourceserver.jwt.issuer-uri: "https://dev-9deub659.us.auth0.com/"
+spring.datasource.url: "jdbc:postgresql://localhost:5432/tasks"
+
+aws:
+  secret-name: "dev/tasks/secrets"
+  region: "us-east-2"
