@@ -1,40 +1,49 @@
 package org.morriswa.taskapp.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
+import lombok.*;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Comparator;
+import javax.persistence.*;
+import java.util.GregorianCalendar;
+import java.util.HashSet;
+import java.util.Set;
 
-@Data @AllArgsConstructor @NoArgsConstructor
-public class Planner implements Serializable {
+@AllArgsConstructor @NoArgsConstructor
+@Entity @Table(name = "Planners")
+@Getter @Setter @Builder
+public class Planner {
+    @Id @SequenceGenerator(name = "planner_seq")
+    @GeneratedValue(generator = "planner_seq", strategy = GenerationType.AUTO)
+    @Column(name = "planner_id")
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id",referencedColumnName = "user_id",nullable = false)
+    private CustomAuth0User user;
+
     private String name;
-    private ArrayList<Task> tasks = new ArrayList<>();
+    private GregorianCalendar creationDate = new GregorianCalendar();
+    private GregorianCalendar startDate;
+    private GregorianCalendar finishDate;
+    private String goal = "";
 
-    public Planner addTask(Task newTask) {
+    @OneToMany(orphanRemoval = true,cascade = CascadeType.ALL,mappedBy = "planner",fetch = FetchType.LAZY)
+//    @JoinTable(name="PlannerTaskTable",
+//            joinColumns = {@JoinColumn(name = "task_id")},
+//            inverseJoinColumns = {@JoinColumn(name = "planner_id")})
+    private Set<Task> tasks = new HashSet<>();
+
+    public Planner(CustomAuth0User user, String planner_name) {
+        this.user = user;
+        this.name = planner_name;
+    }
+
+    public void addTask(Task newTask) {
         this.tasks.add(newTask);
-        this.tasks.sort(Task::compareTo);
-        return this;
+        newTask.setPlanner(this);
     }
 
-    public Planner updateTaskStatus(int indexToCheck,TaskStatus status) {
-        if (this.tasks.get(indexToCheck) == null) {
-            throw new NullPointerException("No task at that index");
-        }
-        this.tasks.get(indexToCheck).setStatus(status);
-        this.tasks.sort(Task::compareTo);
-        return this;
-    }
-
-    public Planner deleteTask(int task_index) {
-        if (this.tasks.get(task_index) == null) {
-            throw new NullPointerException("No task at that index");
-        }
-        this.tasks.remove(task_index);
-        this.tasks.sort(Task::compareTo);
-        return this;
+    public void deleteTask(Task toDel) {
+        this.tasks.remove(toDel);
+        toDel.setPlanner(null);
     }
 }

@@ -1,11 +1,11 @@
 package org.morriswa.taskapp.service;
 
-import org.morriswa.taskapp.dao.CustomAuth0User;
-import org.morriswa.taskapp.dao.CustomAuth0UserRepo;
-import org.morriswa.taskapp.dao.UserProfile;
-import org.morriswa.taskapp.dao.UserProfileRepo;
+import org.morriswa.taskapp.entity.CustomAuth0User;
+import org.morriswa.taskapp.entity.UserProfile;
 import org.morriswa.taskapp.exception.AuthenticationFailedException;
 import org.morriswa.taskapp.exception.RegistrationFailedException;
+import org.morriswa.taskapp.repo.CustomAuth0UserRepo;
+import org.morriswa.taskapp.repo.UserProfileRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

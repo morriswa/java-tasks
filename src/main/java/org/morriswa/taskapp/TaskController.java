@@ -1,7 +1,8 @@
 package org.morriswa.taskapp;
 
-import org.morriswa.taskapp.dao.CustomAuth0User;
-import org.morriswa.taskapp.dao.UserProfile;
+import org.morriswa.taskapp.entity.CustomAuth0User;
+import org.morriswa.taskapp.entity.Planner;
+import org.morriswa.taskapp.entity.UserProfile;
 import org.morriswa.taskapp.service.CustomAuthService;
 import org.morriswa.taskapp.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.Map;
+import java.util.Set;
 
 @RestController @CrossOrigin @RequestMapping(path = "tasks/dev/")
 public class TaskController {
@@ -23,7 +25,7 @@ public class TaskController {
         this.taskService = s;
     }
 
-    @PostMapping(path = "register")
+    @PostMapping(path = "login/register")
 //    @PreAuthorize("hasAuthority('SCOPE_openid')")
     public ResponseEntity<?> registerUser(Principal principal, @RequestHeader String email) {
         try {
@@ -54,75 +56,124 @@ public class TaskController {
     public ResponseEntity<?> getUserProfile(Principal principal, @RequestHeader String email) {
         try {
             CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
-            UserProfile profile = this.taskService.getUserProfile(authenticatedUser);
+            UserProfile profile = this.taskService.profileGet(authenticatedUser);
             return ResponseEntity.ok(profile);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
         }
     }
-
-    @PostMapping(path = "profile/planner/add")
-    public ResponseEntity<?> addPlannerToProfile(Principal principal,
-                                                 @RequestHeader String email,
-                                                 @RequestBody Map<String,Object> request) {
-        try {
-            CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
-            UserProfile profile = this.taskService.newPlanner(authenticatedUser,request);
-            return ResponseEntity.ok(profile);
-        }catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
-        }
-    }
-
     @PatchMapping(path = "profile/update")
     public ResponseEntity<?> updateUserProfile(Principal principal,
                                                @RequestHeader String email,
                                                @RequestBody Map<String,Object> request) {
         try {
             CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
-            UserProfile profile = this.taskService.updateUserProfile(authenticatedUser,request);
+            UserProfile profile = this.taskService.profileUpdate(authenticatedUser,request);
             return ResponseEntity.ok(profile);
         }catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
         }
     }
+    @GetMapping(path = "planner")
+    public ResponseEntity<?> getPlanner( Principal principal,
+                                         @RequestHeader Map<String,Object> headers) {
+        try {
+            if (!headers.containsKey("email")) {
+                throw new IllegalStateException("bad request");
+            }
+            CustomAuth0User authenticatedUser = this.authService.loginFlow(principal, (String) headers.get("email"));
+            Planner planner = this.taskService.getPlanner(authenticatedUser,headers);
+            return ResponseEntity.ok(planner);
+        }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
+        }
+    }
 
-    @PatchMapping(path = "profile/task/add")
+    @GetMapping(path = "planner/all")
+    public ResponseEntity<?> getAllPlanners( Principal principal,
+                                             @RequestHeader String email) {
+        try {
+            CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
+            Set<Planner> planners = this.taskService.getAllPlanners(authenticatedUser);
+            return ResponseEntity.ok(planners);
+        }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
+        }
+    }
+    @PostMapping(path = "planner/add")
+    public ResponseEntity<?> addPlannerToProfile(Principal principal,
+                                                 @RequestHeader String email,
+                                                 @RequestBody Map<String,Object> request) {
+        try {
+            CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
+            Set<Planner> planners = this.taskService.plannerAdd(authenticatedUser,request);
+            return ResponseEntity.ok(planners);
+        }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
+        }
+    }
+
+    @DeleteMapping(path = "planner/del")
+    public ResponseEntity<?> plannerDel(Principal principal,
+                                                 @RequestHeader String email,
+                                                 @RequestBody Map<String,Object> request) {
+        try {
+            CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
+            Set<Planner> planners = this.taskService.plannerDel(authenticatedUser,request);
+            return ResponseEntity.ok(planners);
+        }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
+        }
+    }
+    @PatchMapping(path = "planner/update")
+    public ResponseEntity<?> updatePlanner(Principal principal,
+                                        @RequestHeader String email,
+                                        @RequestBody Map<String,Object> request) {
+        try {
+            CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
+            Planner planner = this.taskService.updatePlanner(authenticatedUser,request);
+            return ResponseEntity.ok(planner);
+        }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
+        }
+    }
+    @PostMapping(path = "task/add")
     public ResponseEntity<?> addTask(Principal principal,
                                                @RequestHeader String email,
                                                @RequestBody Map<String,Object> request) {
         try {
             CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
-            UserProfile profile = this.taskService.updatePlannerWithNewTask(authenticatedUser,request);
-            return ResponseEntity.ok(profile);
+            Planner planner = this.taskService.taskAdd(authenticatedUser,request);
+            return ResponseEntity.ok(planner);
         }catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
         }
     }
 
-    @PatchMapping(path = "profile/task/del")
+    @DeleteMapping(path = "task/del")
     public ResponseEntity<?> delTask(Principal principal,
                                      @RequestHeader String email,
                                      @RequestBody Map<String,Object> request) {
         try {
             CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
-            UserProfile profile = this.taskService.deleteTaskInPlanner(authenticatedUser,request);
-            return ResponseEntity.ok(profile);
+            Planner planner = this.taskService.taskDel(authenticatedUser,request);
+            return ResponseEntity.ok(planner);
         }catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
         }
     }
 
-    @PatchMapping(path = "profile/task/update")
+    @PatchMapping(path = "task/update")
     public ResponseEntity<?> updateTask(Principal principal,
                                      @RequestHeader String email,
                                      @RequestBody Map<String,Object> request) {
         try {
             CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
-            UserProfile profile = this.taskService.updateTaskStatus(authenticatedUser,request);
-            return ResponseEntity.ok(profile);
+            Planner planner = this.taskService.updateTask(authenticatedUser,request);
+            return ResponseEntity.ok(planner);
         }catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
         }
     }
+
 }

@@ -3,7 +3,7 @@ server:
   error.include-message: always
 
 spring:
-  jpa.hibernate.ddl-auto: create-drop
+  jpa.hibernate.ddl-auto: update
   banner.location: classpath:banner.txt
 
 hibernate:

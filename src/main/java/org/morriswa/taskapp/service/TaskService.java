@@ -1,34 +1,78 @@
 package org.morriswa.taskapp.service;
 
 import com.amazonaws.services.managedblockchain.model.IllegalActionException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.catalina.User;
-import org.morriswa.taskapp.dao.CustomAuth0User;
-import org.morriswa.taskapp.dao.CustomAuth0UserRepo;
-import org.morriswa.taskapp.dao.UserProfile;
-import org.morriswa.taskapp.dao.UserProfileRepo;
+import org.morriswa.taskapp.entity.CustomAuth0User;
 import org.morriswa.taskapp.entity.Planner;
 import org.morriswa.taskapp.entity.Task;
-import org.morriswa.taskapp.entity.TaskStatus;
+import org.morriswa.taskapp.entity.UserProfile;
+import org.morriswa.taskapp.enums.TaskStatus;
+import org.morriswa.taskapp.enums.TaskType;
+import org.morriswa.taskapp.exception.AuthenticationFailedException;
+import org.morriswa.taskapp.exception.RequestFailedException;
+import org.morriswa.taskapp.repo.PlannerRepo;
+import org.morriswa.taskapp.repo.TaskRepo;
+import org.morriswa.taskapp.repo.UserProfileRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.ZonedDateTime;
 import java.util.*;
+
+import static org.morriswa.taskapp.exception.CustomExceptionSupply.noPlannerFoundException;
+import static org.morriswa.taskapp.exception.CustomExceptionSupply.noTaskFoundException;
 
 @Service
 public class TaskService {
     private final UserProfileRepo profileRepo;
+    private final PlannerRepo plannerRepo;
+    private final TaskRepo taskRepo;
+
+
+//    private final String PLANNER_NAME;
+//    private final String PLANNER_ID;
+//    private final String TASK_NAME;
+//    private final String TASK_ID;
+//    private final String
+
     @Autowired
-    public TaskService(UserProfileRepo p) {
+    public TaskService(UserProfileRepo p,PlannerRepo pr,TaskRepo tr) {
         this.profileRepo = p;
+        this.plannerRepo = pr;
+        this.taskRepo = tr;
     }
 
-    public UserProfile updateUserProfile(CustomAuth0User user, Map<String,Object> newProfileRequest) {
+
+    // HELPERS
+    private static void validateRequestBody(Map<String,Object> request,List<String> requiredRequestKeys)
+            throws RequestFailedException
+    {
+        for (String key : requiredRequestKeys) {
+            if (!request.containsKey(key)) {
+                throw new RequestFailedException(
+                        String.format("Bad request... Http request body is missing required param: %s",key));
+            }
+        }
+    }
+
+
+    // Profile Actions
+    public UserProfile profileGet(CustomAuth0User authenticatedUser)
+            throws AuthenticationFailedException
+    {
+        return profileRepo.findByUser(authenticatedUser)
+                .orElseThrow(() -> new AuthenticationFailedException(
+                        String.format("Could not access profile for user: %s",authenticatedUser.getOnlineId())));
+    }
+
+    public UserProfile profileUpdate(CustomAuth0User user, Map<String,Object> newProfileRequest)
+            throws AuthenticationFailedException
+    {
         UserProfile profile = profileRepo.findByUser(user)
-                .orElseThrow(() -> new IllegalActionException("could not access profile"));
+                .orElseThrow(() -> new AuthenticationFailedException(
+                        String.format("Could not access profile for user: %s",user.getOnlineId())));
+
         UserProfile updatedProfile = UserProfile.builder()
-                .id(profile.getId()).user(profile.getUser()).planners(profile.getPlanners())
+                .id(profile.getId())
+                .user(profile.getUser())
                 .nameFirst(String.valueOf(newProfileRequest.getOrDefault("name-first",profile.getNameFirst())))
                 .nameMiddle(String.valueOf(newProfileRequest.getOrDefault("name-middle",profile.getNameMiddle())))
                 .nameLast(String.valueOf(newProfileRequest.getOrDefault("name-last",profile.getNameLast())))
@@ -36,104 +80,340 @@ public class TaskService {
                 .pronouns(String.valueOf(newProfileRequest.getOrDefault("pronouns",profile.getPronouns())))
                         .build();
 
-//        if (newProfileRequest.containsKey("name-first") &&
-//                !newProfileRequest.get("name-first").equals("")) {
-//            profile.setNameFirst(newProfileRequest.get("name-first").toString());
-//        }
-//
-//        if (newProfileRequest.containsKey("name-middle") &&
-//                !newProfileRequest.get("name-middle").equals("")) {
-//            profile.setNameMiddle(newProfileRequest.get("name-middle").toString());
-//        }
-//
-//        if (newProfileRequest.containsKey("name-last") &&
-//                !newProfileRequest.get("name-last").equals("")) {
-//            profile.setNameLast(newProfileRequest.get("name-last").toString());
-//        }
-//
-//        if (newProfileRequest.containsKey("name-display") &&
-//                !newProfileRequest.get("name-display").equals("")) {
-//            profile.setDisplayName(newProfileRequest.get("name-display").toString());
-//        }
-//
-//        if (newProfileRequest.containsKey("pronouns") &&
-//                !newProfileRequest.get("pronouns").equals("")) {
-//            profile.setPronouns(newProfileRequest.get("pronouns").toString());
-//        }
-
         profileRepo.save(updatedProfile);
         return updatedProfile;
     }
 
-    public UserProfile newPlanner(CustomAuth0User user, Map<String,Object> newPlannerRequest) {
-        UserProfile profile = profileRepo.findByUser(user)
-                .orElseThrow(() -> new IllegalActionException("could not access profile"));
 
-        if (!newPlannerRequest.containsKey("planner-name")) {
-            throw new IllegalActionException("Bad request");
-        }
+    // Planner Actions
+    public Planner getPlanner(CustomAuth0User authenticatedUser, Map<String, Object> request)
+            throws RequestFailedException
+    {
+//        validateRequestBody(request, List.of("planner-id"));
+//        final String PLANNER_NAME = request.get("planner-name").toString();
+        final Long PLANNER_ID = Long.valueOf(request.get("planner-id").toString());
 
-        Planner newPlanner = new Planner(newPlannerRequest.get("planner-name").toString(),new ArrayList<>());
-        profile.addPlanner(newPlanner);
-        profileRepo.save(profile);
-        return profile;
-    }
-    public UserProfile getUserProfile(CustomAuth0User authenticatedUser) {
-        return profileRepo.findByUser(authenticatedUser)
-                .orElseThrow(() -> new IllegalActionException("could not access profile"));
+        return plannerRepo.findByUserAndId(authenticatedUser,PLANNER_ID)
+                .orElseThrow(noPlannerFoundException(PLANNER_ID,authenticatedUser));
     }
 
-    public UserProfile updatePlannerWithNewTask(CustomAuth0User user, Map<String,Object> updatePlannerRequest) {
-        final String PLANNER_NAME = updatePlannerRequest.get("planner-name").toString();
-        final String TASK_NAME = updatePlannerRequest.get("task-name").toString();
+    public Set<Planner> getAllPlanners(CustomAuth0User authenticatedUser) {
+        return plannerRepo.findAllByUser(authenticatedUser);
+    }
 
+    public Set<Planner> plannerAdd(CustomAuth0User user, Map<String,Object> newPlannerRequest)
+            throws RequestFailedException
+    {
         GregorianCalendar gc = new GregorianCalendar();
-        gc.set( Integer.parseInt(updatePlannerRequest.get("start-year").toString()),
-                Integer.parseInt(updatePlannerRequest.get("start-month").toString()),
-                Integer.parseInt(updatePlannerRequest.get("start-day").toString()));
-        final GregorianCalendar START_DATE = (GregorianCalendar) gc.clone();
-        gc.set( Integer.parseInt(updatePlannerRequest.get("finish-year").toString()),
-                Integer.parseInt(updatePlannerRequest.get("finish-month").toString()),
-                Integer.parseInt(updatePlannerRequest.get("finish-day").toString()));
-        final GregorianCalendar FINISH_DATE = (GregorianCalendar) gc.clone();
 
-        UserProfile profile = profileRepo.findByUser(user)
-                .orElseThrow(() -> new IllegalActionException("could not access profile"));
+//        validateRequestBody(newPlannerRequest, List.of("planner-name"));
+        final String PLANNER_NAME = newPlannerRequest.get("planner-name").toString();
 
-        if (!profile.getPlanners().containsKey(PLANNER_NAME)) {
-            throw new IllegalActionException("No planner found to update");
+        if (plannerRepo.existsByUserAndName(user,PLANNER_NAME)) {
+            throw new RequestFailedException(
+                    String.format("Planner with name %s already exists for user %s",PLANNER_NAME,user.getOnlineId()));
         }
 
-        Task newTask = new Task(TASK_NAME,START_DATE,FINISH_DATE);
-        profile.updatePlanner(PLANNER_NAME,newTask);
-        profileRepo.save(profile);
-        return profile;
+        Planner.PlannerBuilder newPlanner = Planner.builder()
+                .user(user).name(PLANNER_NAME);
+
+        if (newPlannerRequest.containsKey("planner-goal")) {
+            newPlanner.goal((String) newPlannerRequest.get("planner-goal"));
+        }
+
+        if (newPlannerRequest.containsKey("start-year") &&
+            newPlannerRequest.containsKey("start-month") &&
+            newPlannerRequest.containsKey("start-day")) {
+            gc.set((int) newPlannerRequest.get("start-year"),
+                    (int) newPlannerRequest.get("start-month"),
+                    (int) newPlannerRequest.get("start-day"));
+            newPlanner.startDate((GregorianCalendar) gc.clone());
+        }
+
+        if (    newPlannerRequest.containsKey("finish-year") &&
+                newPlannerRequest.containsKey("finish-month") &&
+                newPlannerRequest.containsKey("finish-day")) {
+            gc.set( (int) newPlannerRequest.get("finish-year"),
+                    (int) newPlannerRequest.get("finish-month"),
+                    (int) newPlannerRequest.get("finish-day"));
+            newPlanner.finishDate((GregorianCalendar) gc.clone());
+        }
+
+
+//        Planner newPlanner = new Planner(user,PLANNER_NAME);
+        plannerRepo.save(newPlanner.build());
+        return plannerRepo.findAllByUser(user);
     }
 
-    public UserProfile deleteTaskInPlanner(CustomAuth0User user, Map<String,Object> updatePlannerRequest) {
-        final String PLANNER_NAME = updatePlannerRequest.get("planner-name").toString();
-        final int TASK_INDEX = (int) updatePlannerRequest.get("task-index");
+    public Set<Planner> plannerDel(CustomAuth0User user, Map<String,Object> request) throws RequestFailedException {
+//        validateRequestBody(request, List.of("planner-name"));
+        final Long PLANNER_ID = Integer.toUnsignedLong((int) request.get("planner-name"));
 
-        UserProfile profile = profileRepo.findByUser(user)
-                .orElseThrow(() -> new IllegalActionException("could not access profile"));
+        Optional<Planner> planner = plannerRepo.findByUserAndId(user,PLANNER_ID);
 
-        profile.deleteTaskInPlanner(TASK_INDEX,PLANNER_NAME);
-        profileRepo.save(profile);
-        return profile;
+        plannerRepo.delete(planner
+                .orElseThrow(noPlannerFoundException(PLANNER_ID,user)));
+
+        return plannerRepo.findAllByUser(user);
     }
 
-    public UserProfile updateTaskStatus(CustomAuth0User user, Map<String,Object> taskCompleteRequest) {
-        final String PLANNER_NAME = taskCompleteRequest.get("planner-name").toString();
-        final TaskStatus TASK_STATUS = TaskStatus.valueOf(taskCompleteRequest.get("task-status").toString());
-        final int TASK_INDEX = Integer.parseInt(taskCompleteRequest.get("task-index").toString());
+    public Planner updatePlanner(CustomAuth0User user,Map<String,Object> request)
+            throws RequestFailedException
+    {
+        GregorianCalendar gc = new GregorianCalendar();
+//        validateRequestBody(request,List.of("planner-name"));
+        final Long PLANNER_ID = Integer.toUnsignedLong((int) request.get("planner-id"));
 
-        UserProfile profile = profileRepo.findByUser(user)
-                .orElseThrow(() -> new IllegalActionException("could not access profile"));
+        Planner planner = plannerRepo.findByUserAndId(user,PLANNER_ID)
+                .orElseThrow(noPlannerFoundException(PLANNER_ID,user));
 
-        profile.updateTaskInPlanner(TASK_INDEX,TASK_STATUS,PLANNER_NAME);
-        profileRepo.save(profile);
-        return profile;
+        if (request.containsKey("planner-name")) {
+            planner.setName(request.get("planner-name").toString());
+        }
+
+
+        if (request.containsKey("planner-goal")) {
+            planner.setGoal((String) request.get("planner-goal"));
+        }
+
+        if (request.containsKey("start-year") &&
+            request.containsKey("start-month") &&
+            request.containsKey("start-day")) {
+            gc.set( (int) request.get("start-year"),
+                    (int) request.get("start-month"),
+                    (int) request.get("start-day"));
+            planner.setStartDate((GregorianCalendar) gc.clone());
+        }
+
+        if (    request.containsKey("finish-year") &&
+                request.containsKey("finish-month") &&
+                request.containsKey("finish-day")) {
+            gc.set( (int) request.get("finish-year"),
+                    (int) request.get("finish-month"),
+                    (int) request.get("finish-day"));
+            planner.setFinishDate((GregorianCalendar) gc.clone());
+        }
+
+        plannerRepo.save(planner);
+        return plannerRepo.findByUserAndId(user,PLANNER_ID)
+                .orElseThrow(noPlannerFoundException(PLANNER_ID,user));
     }
 
+
+    // Task Actions
+    public Planner taskAdd(CustomAuth0User user, Map<String,Object> request)
+            throws RequestFailedException
+    {
+        GregorianCalendar gc = new GregorianCalendar();
+//
+//        validateRequestBody(request,List.of(
+//                "start-year", "start-month", "start-day",
+//                "finish-year", "finish-month", "finish-day",
+//                "planner-name", "task-name"));
+
+        final Long PLANNER_ID = Integer.toUnsignedLong((int) request.get("planner-id"));
+        final String TASK_NAME = request.get("task-name").toString();
+//            gc.set( Integer.parseInt(request.get("start-year").toString()),
+//                    Integer.parseInt(request.get("start-month").toString()),
+//                    Integer.parseInt(request.get("start-day").toString()));
+//        final GregorianCalendar START_DATE = (GregorianCalendar) gc.clone();
+//            gc.set( Integer.parseInt(request.get("finish-year").toString()),
+//                    Integer.parseInt(request.get("finish-month").toString()),
+//                    Integer.parseInt(request.get("finish-day").toString()));
+//        final GregorianCalendar FINISH_DATE = (GregorianCalendar) gc.clone();
+
+        Planner planner = plannerRepo.findByUserAndId(user,PLANNER_ID)
+                .orElseThrow(noPlannerFoundException(PLANNER_ID,user));
+        Task.TaskBuilder newTask = Task.builder()
+                .planner(planner).title(TASK_NAME).creationDate(new GregorianCalendar());
+
+        if (    request.containsKey("start-year") &&
+                request.containsKey("start-month") &&
+                request.containsKey("start-day")) {
+            gc.set( (int) request.get("start-year"),
+                    (int) request.get("start-month"),
+                    (int) request.get("start-day"));
+            newTask.startDate((GregorianCalendar) gc.clone());
+        } else {
+            newTask.startDate(new GregorianCalendar());
+        }
+
+        if (    request.containsKey("due-year") &&
+                request.containsKey("due-month") &&
+                request.containsKey("due-day")) {
+            gc.set( (int) request.get("due-year"),
+                    (int) request.get("due-month"),
+                    (int) request.get("due-day"));
+            newTask.dueDate((GregorianCalendar) gc.clone());
+        }
+
+        if (request.containsKey("task-status")) {
+            newTask.status(TaskStatus.valueOf(request.get("task-status").toString()));
+        } else {
+            newTask.status(TaskStatus.NEW);
+        }
+
+        if (request.containsKey("task-type")) {
+            newTask.type(TaskType.valueOf(request.get("task-type").toString()));
+        } else {
+            newTask.type(TaskType.TASK);
+        }
+
+        if (request.containsKey("task-details")) {
+            newTask.description(request.get("task-details").toString());
+        } else {
+            newTask.description("");
+        }
+
+        if (request.containsKey("task-category")) {
+            newTask.category(request.get("task-category").toString());
+        } else {
+            newTask.category("");
+        }
+
+        planner.addTask(newTask.build());
+        plannerRepo.save(planner);
+        return plannerRepo.findByUserAndId(user,PLANNER_ID)
+                .orElseThrow(noPlannerFoundException(PLANNER_ID,user));
+    }
+
+    public Planner taskDel(CustomAuth0User user, Map<String,Object> updatePlannerRequest)
+            throws RequestFailedException
+    {
+//        validateRequestBody(updatePlannerRequest,List.of("planner-name", "task-id"));
+        final Long PLANNER_ID = Integer.toUnsignedLong((int) updatePlannerRequest.get("planner-name"));
+        final Long TASK_ID = Integer.toUnsignedLong((int) updatePlannerRequest.get("task-id"));
+
+        Planner planner = plannerRepo.findByUserAndId(user,PLANNER_ID)
+                .orElseThrow(noPlannerFoundException(PLANNER_ID,user));
+
+        planner.deleteTask(taskRepo.findByPlannerAndId(planner,TASK_ID)
+                .orElseThrow(noTaskFoundException(TASK_ID,planner)));
+
+        plannerRepo.save(planner);
+        return plannerRepo.findByUserAndId(user,PLANNER_ID)
+                .orElseThrow(noPlannerFoundException(PLANNER_ID,user));
+    }
+
+    public Planner updateTask(CustomAuth0User user, Map<String,Object> request) throws RequestFailedException {
+        GregorianCalendar gc = new GregorianCalendar();
+
+//        validateRequestBody(request,List.of("planner-name", "task-id"));
+        final Long PLANNER_ID = Integer.toUnsignedLong((int) request.get("planner-id"));
+        final Long TASK_ID = Integer.toUnsignedLong((int)  request.get("task-id"));
+
+        Planner planner = plannerRepo.findByUserAndId(user,PLANNER_ID)
+                .orElseThrow(noPlannerFoundException(PLANNER_ID,user));
+        Task toUpdate = taskRepo.findByPlannerAndId(planner,TASK_ID)
+                .orElseThrow(noTaskFoundException(TASK_ID,planner));
+        planner.deleteTask(toUpdate);
+
+        if (
+                request.containsKey("start-year") &&
+                request.containsKey("start-month") &&
+                request.containsKey("start-day")
+        ) {
+            gc.set( (int) request.get("start-year"),
+                    (int) request.get("start-month"),
+                    (int) request.get("start-day"));
+            toUpdate.setStartDate((GregorianCalendar) gc.clone());
+        }
+
+        if (
+                request.containsKey("due-year") &&
+                request.containsKey("due-month") &&
+                request.containsKey("due-day")
+        ) {
+            gc.set( (int) request.get("due-year"),
+                    (int) request.get("due-month"),
+                    (int) request.get("due-day"));
+            toUpdate.setDueDate((GregorianCalendar) gc.clone());
+        }
+
+        if (request.containsKey("task-status")) {
+            toUpdate.setStatus(TaskStatus.valueOf(request.get("task-status").toString()));
+
+            if (toUpdate.getStatus().progress >= TaskStatus.COMPLETED.progress) {
+                toUpdate.setCompletedDate(new GregorianCalendar());
+            } else {
+                toUpdate.setCompletedDate(null);
+            }
+        }
+
+        if (request.containsKey("task-type")) {
+            toUpdate.setType(TaskType.valueOf(request.get("task-type").toString()));
+        }
+
+        if (request.containsKey("task-details")) {
+            toUpdate.setDescription(request.get("task-details").toString());
+        }
+
+        if (request.containsKey("task-category")) {
+            toUpdate.setCategory(request.get("task-category").toString());
+        }
+
+        planner.addTask(toUpdate);
+        plannerRepo.save(planner);
+        return plannerRepo.findByUserAndId(user,PLANNER_ID)
+                .orElseThrow(noPlannerFoundException(PLANNER_ID,user));
+    }
+
+    @Deprecated
+    public Planner oldTaskUpdate(CustomAuth0User user, Map<String,Object> request) {
+        if (
+                !request.containsKey("planner-name") ||
+                !request.containsKey("task-id") ||
+                !request.containsKey("task-status") ||
+                !request.containsKey("task-type") ||
+                !request.containsKey("task-details")
+        ) {
+            throw new IllegalStateException("Bad request");
+        }
+        final String PLANNER_NAME = request.get("planner-name").toString();
+        final Long TASK_ID = Integer.toUnsignedLong((int) request.get("task-id"));
+        final TaskStatus TASK_STATUS = TaskStatus.valueOf(request.get("task-status").toString());
+        final TaskType TASK_TYPE = TaskType.valueOf(request.get("task-type").toString());
+        final String TASK_DETAILS = request.get("task-details").toString();
+
+        Planner planner = plannerRepo.findByUserAndName(user,PLANNER_NAME)
+                .orElseThrow(() -> new IllegalActionException("No planner found to update"));
+        Task toUpdate = taskRepo.getByPlannerAndId(planner,TASK_ID);
+        planner.deleteTask(toUpdate);
+
+        toUpdate.setStatus(TASK_STATUS);
+        toUpdate.setType(TASK_TYPE);
+        toUpdate.setDescription(TASK_DETAILS);
+
+        planner.addTask(toUpdate);
+        plannerRepo.save(planner);
+        return plannerRepo.findByUserAndName(user,PLANNER_NAME)
+                .orElseThrow(() -> new IllegalActionException("could not access planner"));
+    }
+
+    @Deprecated
+    public Planner oldUpdateTaskStatus(CustomAuth0User user, Map<String,Object> request) {
+        if (
+                !request.containsKey("planner-name") ||
+                        !request.containsKey("task-id") ||
+                        !request.containsKey("task-status")
+        ) {
+            throw new IllegalStateException("Bad request");
+        }
+        final String PLANNER_NAME = request.get("planner-name").toString();
+        final Long TASK_ID = Integer.toUnsignedLong((int) request.get("task-id"));
+        final TaskStatus TASK_STATUS = TaskStatus.valueOf(request.get("task-status").toString());
+
+        Planner planner = plannerRepo.findByUserAndName(user,PLANNER_NAME)
+                .orElseThrow(() -> new IllegalActionException("No planner found to update"));
+        Task toUpdate = taskRepo.getByPlannerAndId(planner,TASK_ID);
+        planner.deleteTask(toUpdate);
+
+        toUpdate.setStatus(TASK_STATUS);
+
+        planner.addTask(toUpdate);
+        plannerRepo.save(planner);
+        return plannerRepo.findByUserAndName(user,PLANNER_NAME)
+                .orElseThrow(() -> new IllegalActionException("could not access planner"));
+    }
 
 }

@@ -2,19 +2,19 @@ package org.morriswa.taskapp.service;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.morriswa.taskapp.dao.CustomAuth0User;
-import org.morriswa.taskapp.dao.CustomAuth0UserRepo;
-import org.morriswa.taskapp.dao.UserProfileRepo;
+import org.morriswa.taskapp.entity.CustomAuth0User;
 import org.morriswa.taskapp.exception.AuthenticationFailedException;
 import org.morriswa.taskapp.exception.RegistrationFailedException;
-import org.morriswa.taskapp.service.CustomAuthService;
+import org.morriswa.taskapp.repo.CustomAuth0UserRepo;
+import org.morriswa.taskapp.repo.UserProfileRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.security.Principal;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.morriswa.taskapp.TestSuite.getPrincipal;

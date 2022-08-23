@@ -1,42 +1,57 @@
 package org.morriswa.taskapp.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import org.hibernate.annotations.OptimisticLock;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.*;
+import org.morriswa.taskapp.enums.TaskStatus;
+import org.morriswa.taskapp.enums.TaskType;
 
-import java.io.Serializable;
-import java.util.Calendar;
-import java.util.Date;
+import javax.persistence.*;
 import java.util.GregorianCalendar;
 
-@Data
-public class Task implements Serializable,Comparable<Task> {
+@Entity @Table(name = "Tasks")
+@AllArgsConstructor @NoArgsConstructor
+@Getter @Setter @Builder
+public class Task implements Comparable<Task> {
+    @Id
+    @SequenceGenerator(name = "task_seq")
+    @GeneratedValue(generator = "task_seq", strategy = GenerationType.AUTO)
+    @Column(name = "task_id")
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "planner_id", referencedColumnName = "planner_id")
+    @JsonIgnore
+    private Planner planner;
     private String title;
+    private GregorianCalendar creationDate = new GregorianCalendar();
     private GregorianCalendar startDate;
-    private GregorianCalendar finishDate;
-    private String description;
+    private GregorianCalendar dueDate;
+    private GregorianCalendar completedDate;
+
+    private String category = "";
+    private String description = "";
     private TaskStatus status = TaskStatus.NEW;
-
-    public Task(String title,
-                GregorianCalendar startDate,
-                GregorianCalendar finishDate) {
-        this.title = title;
-        this.startDate = startDate;
-        this.finishDate = finishDate;
-        this.description = "";
-    }
-
-    public Task(String title,
-                GregorianCalendar startDate,
-                GregorianCalendar finishDate,
-                String description) {
-        this.title = title;
-        this.startDate = startDate;
-        this.finishDate = finishDate;
-        this.description = description;
-    }
+    private TaskType type = TaskType.TASK;
+//
+//    public Task(String title,
+//                GregorianCalendar startDate,
+//                GregorianCalendar finishDate) {
+//        this.title = title;
+//        this.startDate = startDate;
+//        this.dueDate = finishDate;
+//    }
+//
+//    public Task(String title,
+//                GregorianCalendar startDate,
+//                GregorianCalendar finishDate,
+//                TaskType type,
+//                String description) {
+//        this.title = title;
+//        this.startDate = startDate;
+//        this.dueDate = finishDate;
+//        this.type = type;
+//        this.description = description;
+//    }
 
     @Override
     public int compareTo(Task o) {
