@@ -19,4 +19,13 @@ public class CustomExceptionSupply {
                         taskId,planner.getName(),
                         planner.getUser().getOnlineId()));
     }
+
+    public static Supplier<AuthenticationFailedException>
+        couldNotAuthenticateUserException(String onlineId,String email)
+    {
+        return () -> new AuthenticationFailedException(
+                String.format("User with ID %s and email %s could not be authenticated.",
+                        onlineId,
+                        email));
+    }
 }

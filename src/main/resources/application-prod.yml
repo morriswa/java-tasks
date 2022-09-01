@@ -1,0 +1,20 @@
+server:
+  port: 8080
+  error.include-message: always
+
+spring:
+  jpa.hibernate.ddl-auto: update
+  banner.location: classpath:banner.txt
+
+hibernate:
+  dialect: org.hibernate.dialect.PostgreSQLDialect
+  show-sql: true
+
+## PROD ENV
+auth0.audience: "https://api.tasks.morriswa.org/v2/"
+spring.security.oauth2.resourceserver.jwt.issuer-uri: "https://morriswa-auth-prod.us.auth0.com/"
+#spring.datasource.url: "jdbc:postgresql://localhost:5432/tasks"
+
+aws:
+  secret-name: "tasks/secrets/prod"
+  region: "us-east-2"

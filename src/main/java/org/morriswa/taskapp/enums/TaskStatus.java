@@ -6,12 +6,13 @@ public enum TaskStatus {
     NEW(0),
     STARTED(1),
     IN_PROGRESS(2),
-    REVIEW(3),
+    PAST_DUE(3),
+    REVIEW(4),
     // COMPLETE MARKERS
-    COMPLETED(4),
-    TURNED_IN(5),
-    CLOSED(6),
-    EXPIRED(7);
+    COMPLETED(5),
+    TURNED_IN(6),
+    CLOSED(7),
+    EXPIRED(8);
 
     public final int progress;
 

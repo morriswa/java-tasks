@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import java.security.Principal;
 import java.util.Optional;
 
+import static org.morriswa.taskapp.exception.CustomExceptionSupply.couldNotAuthenticateUserException;
+
 @Service
 public class CustomAuthService {
     private final CustomAuth0UserRepo userRepo;
@@ -26,25 +28,46 @@ public class CustomAuthService {
 
     public CustomAuth0User loginFlow(Principal principal, String email)
             throws AuthenticationFailedException {
-        return userRepo.findByOnlineIdAndEmail(principal.getName(), email)
-                .orElseThrow(() -> new AuthenticationFailedException(
-                        String.format("User with ID %s and email %s could not be authenticated.",
-                                principal.getName(),
-                                email)));
+        final String ONLINE_ID = principal.getName();
+        return userRepo.findByOnlineIdAndEmail(ONLINE_ID, email)
+                .orElseThrow(couldNotAuthenticateUserException(ONLINE_ID, email));
 
     }
 
-    public CustomAuth0User registerFlow(Principal principal, String email) throws RegistrationFailedException {
-        Optional<CustomAuth0User> userOptional = userRepo.findByEmail(email);
-        if (userOptional.isPresent()) {
-            throw new RegistrationFailedException("A user with that email address is already registered!");
-        } else {
-            userRepo.save(new CustomAuth0User(principal.getName(),email));
-            CustomAuth0User newUser =  userRepo.findByOnlineIdAndEmail(principal.getName(),email)
-                    .orElseThrow(() -> new RegistrationFailedException("User could not be registered..."));
-            profileRepo.save(new UserProfile(newUser));
-            return newUser;
+    public CustomAuth0User registerFlow(Principal principal, String email)
+            throws RegistrationFailedException, AuthenticationFailedException
+    {
+        final String ONLINE_ID = principal.getName();
+
+        Optional<CustomAuth0User> existingUserCheck = userRepo.findByOnlineId(ONLINE_ID);
+
+        if (existingUserCheck.isPresent()) {
+
+            if (!userRepo.existsByOnlineIdAndEmail(ONLINE_ID,email)) {
+                CustomAuth0User existingUser = existingUserCheck.get();
+                existingUser.setEmail(email);
+                userRepo.save(existingUser);
+                return existingUser;
+            }
+
+            throw new RegistrationFailedException(
+                    String.format("A user with ID %s is already registered!", ONLINE_ID));
         }
 
+        userRepo.save(CustomAuth0User.builder()
+                .onlineId(ONLINE_ID)
+                .email(email).build());
+
+        CustomAuth0User newUser = userRepo.findByOnlineIdAndEmail(ONLINE_ID, email)
+                .orElseThrow(couldNotAuthenticateUserException(ONLINE_ID,email));
+
+        profileRepo.save(new UserProfile(newUser));
+
+        if (profileRepo.existsByUser(newUser)) {
+            return newUser;
+        } else {
+            userRepo.delete(newUser);
+            throw new RegistrationFailedException("Could not create new user.");
+        }
     }
 }

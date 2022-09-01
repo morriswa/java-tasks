@@ -12,10 +12,9 @@ import java.util.GregorianCalendar;
 @AllArgsConstructor @NoArgsConstructor
 @Getter @Setter @Builder
 public class Task implements Comparable<Task> {
-    @Id
+    @Id @Column(name = "task_id")
     @SequenceGenerator(name = "task_seq")
     @GeneratedValue(generator = "task_seq", strategy = GenerationType.AUTO)
-    @Column(name = "task_id")
     private Long id;
 
     @ManyToOne

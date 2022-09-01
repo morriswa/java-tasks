@@ -1,6 +1,7 @@
 package org.morriswa.taskapp.entity;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -8,7 +9,7 @@ import javax.persistence.*;
 import java.io.Serializable;
 
 @Entity @Table(name = "Users")
-@Data @AllArgsConstructor @NoArgsConstructor
+@Data @AllArgsConstructor @NoArgsConstructor @Builder
 public class CustomAuth0User implements Serializable
 {
     @Id @Column(name = "user_id",unique = true,nullable = false)
@@ -21,9 +22,4 @@ public class CustomAuth0User implements Serializable
 
     @Column(name ="email",unique = true,nullable = false)
     private String email;
-
-    public CustomAuth0User(String onlineId, String email) {
-        this.onlineId = onlineId;
-        this.email = email;
-    }
 }
