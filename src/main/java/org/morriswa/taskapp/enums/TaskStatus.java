@@ -2,17 +2,18 @@ package org.morriswa.taskapp.enums;
 
 public enum TaskStatus {
     BACKLOG(-1),
+    PAST_DUE(-1),
     // IN PROGRESS MARKERS
     NEW(0),
-    STARTED(1),
-    IN_PROGRESS(2),
-    PAST_DUE(3),
-    REVIEW(4),
+    STARTED(0),
+    IN_PROGRESS(0),
+    // REVIEW
+    REVIEW(1),
     // COMPLETE MARKERS
-    COMPLETED(5),
-    TURNED_IN(6),
-    CLOSED(7),
-    EXPIRED(8);
+    COMPLETED(2),
+    TURNED_IN(2),
+    CLOSED(2),
+    EXPIRED(3);
 
     public final int progress;
 

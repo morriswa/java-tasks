@@ -26,12 +26,6 @@ public class TaskService {
     private final PlannerRepo plannerRepo;
     private final TaskRepo taskRepo;
 
-//    private final String PLANNER_NAME;
-//    private final String PLANNER_ID;
-//    private final String TASK_NAME;
-//    private final String TASK_ID;
-//    private final String
-
     @Autowired
     public TaskService(UserProfileRepo p,PlannerRepo pr,TaskRepo tr) {
         this.profileRepo = p;
@@ -39,17 +33,6 @@ public class TaskService {
         this.taskRepo = tr;
     }
 
-//    // HELPERS
-//    private static void validateRequestBody(Map<String,Object> request,List<String> requiredRequestKeys)
-//            throws RequestFailedException
-//    {
-//        for (String key : requiredRequestKeys) {
-//            if (!request.containsKey(key)) {
-//                throw new RequestFailedException(
-//                        String.format("Bad request... Http request body is missing required param: %s",key));
-//            }
-//        }
-//    }
 
     // Profile Actions
     public UserProfile profileGet(CustomAuth0User authenticatedUser)
@@ -70,11 +53,11 @@ public class TaskService {
         UserProfile updatedProfile = UserProfile.builder()
                 .id(profile.getId())
                 .user(profile.getUser())
-                .nameFirst(String.valueOf(newProfileRequest.getOrDefault("name-first",profile.getNameFirst())))
-                .nameMiddle(String.valueOf(newProfileRequest.getOrDefault("name-middle",profile.getNameMiddle())))
-                .nameLast(String.valueOf(newProfileRequest.getOrDefault("name-last",profile.getNameLast())))
-                .displayName(String.valueOf(newProfileRequest.getOrDefault("name-display",profile.getDisplayName())))
-                .pronouns(String.valueOf(newProfileRequest.getOrDefault("pronouns",profile.getPronouns())))
+                .nameFirst((String) newProfileRequest.getOrDefault("name-first",profile.getNameFirst()))
+                .nameMiddle((String) newProfileRequest.getOrDefault("name-middle",profile.getNameMiddle()))
+                .nameLast((String) newProfileRequest.getOrDefault("name-last",profile.getNameLast()))
+                .displayName((String) newProfileRequest.getOrDefault("name-display",profile.getDisplayName()))
+                .pronouns((String) newProfileRequest.getOrDefault("pronouns",profile.getPronouns()))
                         .build();
 
         profileRepo.save(updatedProfile);
@@ -377,6 +360,10 @@ public class TaskService {
                     (int) request.get("finish-month"),
                     (int) request.get("finish-day"));
             toUpdate.setCompletedDate((GregorianCalendar) gc.clone());
+        }
+
+        if (request.containsKey("task-name")) {
+            toUpdate.setTitle(request.get("task-name").toString());
         }
 
         if (request.containsKey("task-type")) {
