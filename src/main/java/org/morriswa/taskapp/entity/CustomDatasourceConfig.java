@@ -19,7 +19,8 @@ public class CustomDatasourceConfig {
     @Bean
     public DataSource getDataSource() {
 
-        return DataSourceBuilder.create()
+        return "prod".equals(env.getProperty("spring.profiles.active"))?
+                DataSourceBuilder.create()
                 .username(ss.retriveKey("dbuser"))
                 .password(ss.retriveKey("dbpass"))
                 .url(
@@ -27,7 +28,9 @@ public class CustomDatasourceConfig {
                                 ss.retriveKey("dburi"),
                                 5432,
                                 ss.retriveKey("dbname"))
-                ).build();
+                ).build()
+                : DataSourceBuilder.create()
+                .url(env.getProperty("spring.datasource.url")).build();
 
     }
 }

@@ -17,7 +17,7 @@ import java.util.Set;
 
 @SuppressWarnings("unused")
 @RestController @CrossOrigin
-@RequestMapping(path = "tasks/dev/")
+@RequestMapping(path = "${server.path}")
 public class TaskController {
     private final CustomAuthService authService;
     private final TaskService taskService;
