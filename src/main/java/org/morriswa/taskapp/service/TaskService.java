@@ -221,18 +221,32 @@ public class TaskService {
         Task.TaskBuilder newTask = Task.builder()
                 .planner(planner).title(TASK_NAME).creationDate(new GregorianCalendar());
 
-        if (    request.containsKey("start-year") &&
-                request.containsKey("start-month") &&
-                request.containsKey("start-day")) {
+
+        if (request.containsKey("start-greg")) {
+            gc.setTimeInMillis((Long) request.get("start-greg"));
+            newTask.startDate((GregorianCalendar) gc.clone());
+        }
+        else if (
+                request.containsKey("start-year") &&
+                        request.containsKey("start-month") &&
+                        request.containsKey("start-day")
+        ) {
             gc.set( (int) request.get("start-year"),
                     (int) request.get("start-month"),
                     (int) request.get("start-day"));
             newTask.startDate((GregorianCalendar) gc.clone());
         }
 
-        if (    request.containsKey("due-year") &&
-                request.containsKey("due-month") &&
-                request.containsKey("due-day")) {
+
+        if (    request.containsKey("due-greg") ) {
+            gc.setTimeInMillis((long) request.get("due-greg"));
+            newTask.dueDate((GregorianCalendar) gc.clone());
+        }
+        else if (
+                request.containsKey("due-year") &&
+                        request.containsKey("due-month") &&
+                        request.containsKey("due-day")
+        ) {
             gc.set( (int) request.get("due-year"),
                     (int) request.get("due-month"),
                     (int) request.get("due-day"));
@@ -319,7 +333,11 @@ public class TaskService {
                 .orElseThrow(noTaskFoundException(TASK_ID,planner));
         planner.deleteTask(toUpdate);
 
-        if (
+        if (request.containsKey("start-greg")) {
+            gc.setTimeInMillis((Long) request.get("start-greg"));
+            toUpdate.setStartDate((GregorianCalendar) gc.clone());
+        }
+        else if (
                 request.containsKey("start-year") &&
                 request.containsKey("start-month") &&
                 request.containsKey("start-day")
@@ -330,7 +348,12 @@ public class TaskService {
             toUpdate.setStartDate((GregorianCalendar) gc.clone());
         }
 
-        if (
+
+        if (    request.containsKey("due-greg") ) {
+            gc.setTimeInMillis((long) request.get("due-greg"));
+            toUpdate.setDueDate((GregorianCalendar) gc.clone());
+        }
+        else if (
                 request.containsKey("due-year") &&
                 request.containsKey("due-month") &&
                 request.containsKey("due-day")
@@ -351,7 +374,10 @@ public class TaskService {
             }
         }
 
-        if (
+        if (request.containsKey("finish-greg") ) {
+            gc.setTimeInMillis((long) request.get("finish-greg"));
+            toUpdate.setDueDate((GregorianCalendar) gc.clone());
+        } else if (
                 request.containsKey("finish-year") &&
                         request.containsKey("finish-month") &&
                         request.containsKey("finish-day")
