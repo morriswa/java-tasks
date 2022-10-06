@@ -21,13 +21,13 @@ public class CustomDatasourceConfig {
 
         return "prod".equals(env.getProperty("spring.profiles.active"))?
                 DataSourceBuilder.create()
-                .username(ss.retriveKey("dbuser"))
-                .password(ss.retriveKey("dbpass"))
+                .username(ss.retrieveKey("dbuser"))
+                .password(ss.retrieveKey("dbpass"))
                 .url(
                         String.format("jdbc:postgresql://%s:%s/%s",
-                                ss.retriveKey("dburi"),
+                                ss.retrieveKey("dburi"),
                                 5432,
-                                ss.retriveKey("dbname"))
+                                ss.retrieveKey("dbname"))
                 ).build()
                 : DataSourceBuilder.create()
                 .url(env.getProperty("spring.datasource.url")).build();

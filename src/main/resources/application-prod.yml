@@ -2,6 +2,7 @@ server:
   path: v2/
   port: 8080
   error.include-message: always
+  debug: False
 
 spring:
   jpa.hibernate.ddl-auto: update

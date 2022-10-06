@@ -2,6 +2,7 @@ server:
   path: tasks/dev/
   port: 8080
   error.include-message: always
+  debug: TRUE
 
 spring:
   jpa.hibernate.ddl-auto: update

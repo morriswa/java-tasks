@@ -1,7 +1,7 @@
 package org.morriswa.taskapp.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.morriswa.common.security.AmazonSecretService;
+import org.morriswa.taskapp.security.AmazonSecretService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
@@ -21,7 +21,7 @@ public class AmazonSecretServiceImpl extends AmazonSecretService
                 env.getProperty("aws.region"));
     }
 
-    public String retriveKey(String key) {
+    public String retrieveKey(String key) {
         Object secret = this.secrets.get(key);
         if (Objects.isNull(secret)) {
             throw new NullPointerException(String.format("No secret found with key:%s",key));

@@ -1,4 +1,4 @@
-package org.morriswa.taskapp;
+package org.morriswa.taskapp.control;
 
 import org.morriswa.taskapp.entity.CustomAuth0User;
 import org.morriswa.taskapp.entity.Planner;
@@ -6,6 +6,7 @@ import org.morriswa.taskapp.entity.UserProfile;
 import org.morriswa.taskapp.service.CustomAuthService;
 import org.morriswa.taskapp.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 @SuppressWarnings("unused")
@@ -21,16 +23,17 @@ import java.util.Set;
 public class TaskController {
     private final CustomAuthService authService;
     private final TaskService taskService;
+    private final Environment env;
     @Autowired
-    public TaskController(CustomAuthService a,TaskService s) {
+    public TaskController(CustomAuthService a,TaskService s,Environment e) {
         this.authService = a;
         this.taskService = s;
+        this.env = e;
     }
 
 
     // LOGIN ENDPOINTS
-    @PostMapping(path = "login/register")
-//    @PreAuthorize("hasAuthority('SCOPE_openid')")
+    @PostMapping(path = "login")
     public ResponseEntity<?> registerUser(Principal principal, @RequestHeader String email) {
         try {
             CustomAuth0User newUser = this.authService.registerFlow(principal,email);
@@ -39,7 +42,9 @@ public class TaskController {
                     String.format("User with email %s, ID %S registered successfully.",
                             confirmNewUser.getEmail(),confirmNewUser.getOnlineId()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
+            return Objects.equals(env.getProperty("server.debug"), "TRUE") ?
+                    ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e)
+                    : ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
@@ -52,7 +57,9 @@ public class TaskController {
                     String.format("User with email %s, ID %S authenticated successfully.",
                             newUser.getEmail(),newUser.getOnlineId()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
+            return Objects.equals(env.getProperty("server.debug"), "TRUE") ?
+                    ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e)
+                    : ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
@@ -65,11 +72,13 @@ public class TaskController {
             UserProfile profile = this.taskService.profileGet(authenticatedUser);
             return ResponseEntity.ok(profile);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
+            return Objects.equals(env.getProperty("server.debug"), "TRUE") ?
+                    ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e)
+                    : ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
-    @PatchMapping(path = "profile/update")
+    @PatchMapping(path = "profile")
     public ResponseEntity<?> updateUserProfile(Principal principal,
                                                @RequestHeader String email,
                                                @RequestBody Map<String,Object> request) {
@@ -78,7 +87,9 @@ public class TaskController {
             UserProfile profile = this.taskService.profileUpdate(authenticatedUser,request);
             return ResponseEntity.ok(profile);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
+            return Objects.equals(env.getProperty("server.debug"), "TRUE") ?
+                    ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e)
+                    : ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
@@ -93,11 +104,13 @@ public class TaskController {
             Planner planner = this.taskService.getPlanner(authenticatedUser,Map.of("planner-id",planner_id));
             return ResponseEntity.ok(planner);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
+            return Objects.equals(env.getProperty("server.debug"), "TRUE") ?
+                    ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e)
+                    : ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
-    @GetMapping(path = "planner/all")
+    @GetMapping(path = "planners")
     public ResponseEntity<?> getAllPlanners( Principal principal,
                                              @RequestHeader String email) {
         try {
@@ -105,11 +118,13 @@ public class TaskController {
             Set<Planner> planners = this.taskService.getAllPlanners(authenticatedUser);
             return ResponseEntity.ok(planners);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
+            return Objects.equals(env.getProperty("server.debug"), "TRUE") ?
+                    ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e)
+                    : ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
-    @PostMapping(path = "planner/add")
+    @PostMapping(path = "planner")
     public ResponseEntity<?> addPlannerToProfile(Principal principal,
                                                  @RequestHeader String email,
                                                  @RequestBody Map<String,Object> request) {
@@ -118,11 +133,13 @@ public class TaskController {
             Set<Planner> planners = this.taskService.plannerAdd(authenticatedUser,request);
             return ResponseEntity.ok(planners);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
+            return Objects.equals(env.getProperty("server.debug"), "TRUE") ?
+                    ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e)
+                    : ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
-    @DeleteMapping(path = "planner/del")
+    @DeleteMapping(path = "planner")
     public ResponseEntity<?> plannerDel(Principal principal,
                                                  @RequestHeader String email,
                                                  @RequestBody Map<String,Object> request) {
@@ -131,11 +148,13 @@ public class TaskController {
             Set<Planner> planners = this.taskService.plannerDel(authenticatedUser,request);
             return ResponseEntity.ok(planners);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
+            return Objects.equals(env.getProperty("server.debug"), "TRUE") ?
+                    ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e)
+                    : ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
-    @PatchMapping(path = "planner/update")
+    @PatchMapping(path = "planner")
     public ResponseEntity<?> updatePlanner(Principal principal,
                                         @RequestHeader String email,
                                         @RequestBody Map<String,Object> request) {
@@ -144,13 +163,15 @@ public class TaskController {
             Planner planner = this.taskService.updatePlanner(authenticatedUser,request);
             return ResponseEntity.ok(planner);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
+            return Objects.equals(env.getProperty("server.debug"), "TRUE") ?
+                    ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e)
+                    : ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
 
     // TASK ENDPOINTS
-    @PostMapping(path = "task/add")
+    @PostMapping(path = "task")
     public ResponseEntity<?> addTask(Principal principal,
                                                @RequestHeader String email,
                                                @RequestBody Map<String,Object> request) {
@@ -159,11 +180,13 @@ public class TaskController {
             Planner planner = this.taskService.taskAdd(authenticatedUser,request);
             return ResponseEntity.ok(planner);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
+            return Objects.equals(env.getProperty("server.debug"), "TRUE") ?
+                    ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e)
+                    : ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
-    @DeleteMapping(path = "task/del")
+    @DeleteMapping(path = "task")
     public ResponseEntity<?> delTask(Principal principal,
                                      @RequestHeader String email,
                                      @RequestBody Map<String,Object> request) {
@@ -172,11 +195,13 @@ public class TaskController {
             Planner planner = this.taskService.taskDel(authenticatedUser,request);
             return ResponseEntity.ok(planner);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
+            return Objects.equals(env.getProperty("server.debug"), "TRUE") ?
+                    ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e)
+                    : ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
-    @PatchMapping(path = "task/update")
+    @PatchMapping(path = "task")
     public ResponseEntity<?> updateTask(Principal principal,
                                      @RequestHeader String email,
                                      @RequestBody Map<String,Object> request) {
@@ -185,7 +210,9 @@ public class TaskController {
             Planner planner = this.taskService.updateTask(authenticatedUser,request);
             return ResponseEntity.ok(planner);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
+            return Objects.equals(env.getProperty("server.debug"), "TRUE") ?
+                    ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e)
+                    : ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 

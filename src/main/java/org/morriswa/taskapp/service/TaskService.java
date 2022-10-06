@@ -1,6 +1,5 @@
 package org.morriswa.taskapp.service;
 
-import com.amazonaws.services.managedblockchain.model.IllegalActionException;
 import org.morriswa.taskapp.entity.CustomAuth0User;
 import org.morriswa.taskapp.entity.Planner;
 import org.morriswa.taskapp.entity.Task;
@@ -15,7 +14,10 @@ import org.morriswa.taskapp.repo.UserProfileRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.GregorianCalendar;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.morriswa.taskapp.exception.CustomExceptionSupply.noPlannerFoundException;
 import static org.morriswa.taskapp.exception.CustomExceptionSupply.noTaskFoundException;
@@ -67,14 +69,9 @@ public class TaskService {
 
     // Planner Actions
     public Planner getPlanner(CustomAuth0User authenticatedUser, Map<String, Object> request)
-            throws RequestFailedException
+            throws Exception
     {
-        final Long PLANNER_ID;
-        try {
-            PLANNER_ID = Integer.toUnsignedLong((int) request.get("planner-id"));
-        } catch (Exception e) {
-            throw new RequestFailedException(e.getMessage());
-        }
+        final Long PLANNER_ID = Integer.toUnsignedLong((int) request.get("planner-id"));
 
         return plannerRepo.findByUserAndId(authenticatedUser,PLANNER_ID)
                 .orElseThrow(noPlannerFoundException(PLANNER_ID,authenticatedUser));
@@ -85,16 +82,11 @@ public class TaskService {
     }
 
     public Set<Planner> plannerAdd(CustomAuth0User user, Map<String,Object> newPlannerRequest)
-            throws RequestFailedException
+            throws Exception
     {
         GregorianCalendar gc = new GregorianCalendar();
 
-        final String PLANNER_NAME;
-        try {
-            PLANNER_NAME = newPlannerRequest.get("planner-name").toString();
-        } catch (Exception e) {
-            throw new RequestFailedException(e.getMessage());
-        }
+        final String PLANNER_NAME = newPlannerRequest.get("planner-name").toString();
 
         if (plannerRepo.existsByUserAndName(user,PLANNER_NAME)) {
             throw new RequestFailedException(
@@ -102,7 +94,7 @@ public class TaskService {
         }
 
         if (PLANNER_NAME.equals("")) {
-            throw new RequestFailedException("Planner cannot have no name: ");
+            throw new RequestFailedException("Planner cannot have no name");
         }
 
         Planner.PlannerBuilder newPlanner = Planner.builder()
@@ -112,39 +104,24 @@ public class TaskService {
             newPlanner.goal((String) newPlannerRequest.get("planner-goal"));
         }
 
-        if (newPlannerRequest.containsKey("start-year") &&
-            newPlannerRequest.containsKey("start-month") &&
-            newPlannerRequest.containsKey("start-day")) {
-            gc.set( (int) newPlannerRequest.get("start-year"),
-                    (int) newPlannerRequest.get("start-month"),
-                    (int) newPlannerRequest.get("start-day"));
+        if (newPlannerRequest.containsKey("start-greg")) {
+            gc.setTimeInMillis((Long) newPlannerRequest.get("start-greg"));
             newPlanner.startDate((GregorianCalendar) gc.clone());
         }
 
-        if (    newPlannerRequest.containsKey("finish-year") &&
-                newPlannerRequest.containsKey("finish-month") &&
-                newPlannerRequest.containsKey("finish-day")) {
-            gc.set( (int) newPlannerRequest.get("finish-year"),
-                    (int) newPlannerRequest.get("finish-month"),
-                    (int) newPlannerRequest.get("finish-day"));
+        if (newPlannerRequest.containsKey("finish-greg")) {
+            gc.setTimeInMillis((Long) newPlannerRequest.get("finish-greg"));
             newPlanner.finishDate((GregorianCalendar) gc.clone());
         }
 
-
-//        Planner newPlanner = new Planner(user,PLANNER_NAME);
         plannerRepo.save(newPlanner.build());
         return plannerRepo.findAllByUser(user);
     }
 
     public Set<Planner> plannerDel(CustomAuth0User user, Map<String,Object> request)
-            throws RequestFailedException
+            throws Exception
     {
-        final Long PLANNER_ID;
-        try {
-            PLANNER_ID = Integer.toUnsignedLong((int) request.get("planner-id"));
-        } catch (Exception e) {
-            throw new RequestFailedException(e.getMessage());
-        }
+        final Long PLANNER_ID = Integer.toUnsignedLong((int) request.get("planner-id"));
 
         Optional<Planner> planner = plannerRepo.findByUserAndId(user,PLANNER_ID);
 
@@ -158,12 +135,7 @@ public class TaskService {
             throws RequestFailedException
     {
         GregorianCalendar gc = new GregorianCalendar();
-        final Long PLANNER_ID;
-        try {
-            PLANNER_ID = Integer.toUnsignedLong((int) request.get("planner-id"));
-        } catch (Exception e) {
-            throw new RequestFailedException(e.getMessage());
-        }
+        final Long PLANNER_ID = Integer.toUnsignedLong((int) request.get("planner-id"));
 
         Planner planner = plannerRepo.findByUserAndId(user,PLANNER_ID)
                 .orElseThrow(noPlannerFoundException(PLANNER_ID,user));
@@ -172,26 +144,17 @@ public class TaskService {
             planner.setName(request.get("planner-name").toString());
         }
 
-
         if (request.containsKey("planner-goal")) {
             planner.setGoal((String) request.get("planner-goal"));
         }
 
-        if (request.containsKey("start-year") &&
-            request.containsKey("start-month") &&
-            request.containsKey("start-day")) {
-            gc.set( (int) request.get("start-year"),
-                    (int) request.get("start-month"),
-                    (int) request.get("start-day"));
+        if (request.containsKey("start-greg")) {
+            gc.setTimeInMillis((Long) request.get("start-greg"));
             planner.setStartDate((GregorianCalendar) gc.clone());
         }
 
-        if (    request.containsKey("finish-year") &&
-                request.containsKey("finish-month") &&
-                request.containsKey("finish-day")) {
-            gc.set( (int) request.get("finish-year"),
-                    (int) request.get("finish-month"),
-                    (int) request.get("finish-day"));
+        if (request.containsKey("finish-greg")) {
+            gc.setTimeInMillis((Long) request.get("finish-greg"));
             planner.setFinishDate((GregorianCalendar) gc.clone());
         }
 
@@ -203,18 +166,12 @@ public class TaskService {
 
     // Task Actions
     public Planner taskAdd(CustomAuth0User user, Map<String,Object> request)
-            throws RequestFailedException
+            throws Exception
     {
         GregorianCalendar gc = new GregorianCalendar();
 
-        final Long PLANNER_ID;
-        final String TASK_NAME;
-        try {
-            PLANNER_ID = Integer.toUnsignedLong((int) request.get("planner-id"));
-            TASK_NAME = request.get("task-name").toString();
-        } catch (Exception e) {
-            throw new RequestFailedException(e.getMessage());
-        }
+        final Long PLANNER_ID = Integer.toUnsignedLong((int) request.get("planner-id"));
+        final String TASK_NAME = request.get("task-name").toString();
 
         Planner planner = plannerRepo.findByUserAndId(user,PLANNER_ID)
                 .orElseThrow(noPlannerFoundException(PLANNER_ID,user));
@@ -226,30 +183,9 @@ public class TaskService {
             gc.setTimeInMillis((Long) request.get("start-greg"));
             newTask.startDate((GregorianCalendar) gc.clone());
         }
-        else if (
-                request.containsKey("start-year") &&
-                        request.containsKey("start-month") &&
-                        request.containsKey("start-day")
-        ) {
-            gc.set( (int) request.get("start-year"),
-                    (int) request.get("start-month"),
-                    (int) request.get("start-day"));
-            newTask.startDate((GregorianCalendar) gc.clone());
-        }
-
 
         if (    request.containsKey("due-greg") ) {
             gc.setTimeInMillis((long) request.get("due-greg"));
-            newTask.dueDate((GregorianCalendar) gc.clone());
-        }
-        else if (
-                request.containsKey("due-year") &&
-                        request.containsKey("due-month") &&
-                        request.containsKey("due-day")
-        ) {
-            gc.set( (int) request.get("due-year"),
-                    (int) request.get("due-month"),
-                    (int) request.get("due-day"));
             newTask.dueDate((GregorianCalendar) gc.clone());
         }
 
@@ -264,6 +200,11 @@ public class TaskService {
             }
         } else {
             newTask.status(TaskStatus.NEW);
+        }
+
+        if (request.containsKey("finish-greg") ) {
+            gc.setTimeInMillis((long) request.get("finish-greg"));
+            newTask.completedDate((GregorianCalendar) gc.clone());
         }
 
         if (request.containsKey("task-type")) {
@@ -292,16 +233,10 @@ public class TaskService {
     }
 
     public Planner taskDel(CustomAuth0User user, Map<String,Object> updatePlannerRequest)
-            throws RequestFailedException
+            throws Exception
     {
-        final Long PLANNER_ID;
-        final Long TASK_ID;
-        try {
-             PLANNER_ID = Integer.toUnsignedLong((int) updatePlannerRequest.get("planner-id"));
-             TASK_ID = Integer.toUnsignedLong((int) updatePlannerRequest.get("task-id"));
-        } catch (Exception e) {
-            throw new RequestFailedException(e.getMessage());
-        }
+        final Long PLANNER_ID = Integer.toUnsignedLong((int) updatePlannerRequest.get("planner-id"));
+        final Long TASK_ID = Integer.toUnsignedLong((int) updatePlannerRequest.get("task-id"));
 
         Planner planner = plannerRepo.findByUserAndId(user,PLANNER_ID)
                 .orElseThrow(noPlannerFoundException(PLANNER_ID,user));
@@ -315,17 +250,11 @@ public class TaskService {
     }
 
     public Planner updateTask(CustomAuth0User user, Map<String,Object> request)
-            throws RequestFailedException
+            throws Exception
     {
         GregorianCalendar gc = new GregorianCalendar();
-        final Long PLANNER_ID;
-        final Long TASK_ID;
-        try {
-            PLANNER_ID = Integer.toUnsignedLong((int) request.get("planner-id"));
-            TASK_ID = Integer.toUnsignedLong((int)  request.get("task-id"));
-        } catch (Exception e) {
-            throw new RequestFailedException(e.getMessage());
-        }
+        final Long PLANNER_ID = Integer.toUnsignedLong((int) request.get("planner-id"));
+        final Long TASK_ID = Integer.toUnsignedLong((int)  request.get("task-id"));
 
         Planner planner = plannerRepo.findByUserAndId(user,PLANNER_ID)
                 .orElseThrow(noPlannerFoundException(PLANNER_ID,user));
@@ -337,30 +266,9 @@ public class TaskService {
             gc.setTimeInMillis((Long) request.get("start-greg"));
             toUpdate.setStartDate((GregorianCalendar) gc.clone());
         }
-        else if (
-                request.containsKey("start-year") &&
-                request.containsKey("start-month") &&
-                request.containsKey("start-day")
-        ) {
-            gc.set( (int) request.get("start-year"),
-                    (int) request.get("start-month"),
-                    (int) request.get("start-day"));
-            toUpdate.setStartDate((GregorianCalendar) gc.clone());
-        }
 
-
-        if (    request.containsKey("due-greg") ) {
+        if (request.containsKey("due-greg")) {
             gc.setTimeInMillis((long) request.get("due-greg"));
-            toUpdate.setDueDate((GregorianCalendar) gc.clone());
-        }
-        else if (
-                request.containsKey("due-year") &&
-                request.containsKey("due-month") &&
-                request.containsKey("due-day")
-        ) {
-            gc.set( (int) request.get("due-year"),
-                    (int) request.get("due-month"),
-                    (int) request.get("due-day"));
             toUpdate.setDueDate((GregorianCalendar) gc.clone());
         }
 
@@ -376,15 +284,6 @@ public class TaskService {
 
         if (request.containsKey("finish-greg") ) {
             gc.setTimeInMillis((long) request.get("finish-greg"));
-            toUpdate.setDueDate((GregorianCalendar) gc.clone());
-        } else if (
-                request.containsKey("finish-year") &&
-                        request.containsKey("finish-month") &&
-                        request.containsKey("finish-day")
-        ) {
-            gc.set( (int) request.get("finish-year"),
-                    (int) request.get("finish-month"),
-                    (int) request.get("finish-day"));
             toUpdate.setCompletedDate((GregorianCalendar) gc.clone());
         }
 
@@ -408,64 +307,6 @@ public class TaskService {
         plannerRepo.save(planner);
         return plannerRepo.findByUserAndId(user,PLANNER_ID)
                 .orElseThrow(noPlannerFoundException(PLANNER_ID,user));
-    }
-
-    @Deprecated
-    public Planner oldTaskUpdate(CustomAuth0User user, Map<String,Object> request) {
-        if (
-                !request.containsKey("planner-name") ||
-                !request.containsKey("task-id") ||
-                !request.containsKey("task-status") ||
-                !request.containsKey("task-type") ||
-                !request.containsKey("task-details")
-        ) {
-            throw new IllegalStateException("Bad request");
-        }
-        final String PLANNER_NAME = request.get("planner-name").toString();
-        final Long TASK_ID = Integer.toUnsignedLong((int) request.get("task-id"));
-        final TaskStatus TASK_STATUS = TaskStatus.valueOf(request.get("task-status").toString());
-        final TaskType TASK_TYPE = TaskType.valueOf(request.get("task-type").toString());
-        final String TASK_DETAILS = request.get("task-details").toString();
-
-        Planner planner = plannerRepo.findByUserAndName(user,PLANNER_NAME)
-                .orElseThrow(() -> new IllegalActionException("No planner found to update"));
-        Task toUpdate = taskRepo.getByPlannerAndId(planner,TASK_ID);
-        planner.deleteTask(toUpdate);
-
-        toUpdate.setStatus(TASK_STATUS);
-        toUpdate.setType(TASK_TYPE);
-        toUpdate.setDescription(TASK_DETAILS);
-
-        planner.addTask(toUpdate);
-        plannerRepo.save(planner);
-        return plannerRepo.findByUserAndName(user,PLANNER_NAME)
-                .orElseThrow(() -> new IllegalActionException("could not access planner"));
-    }
-
-    @Deprecated
-    public Planner oldUpdateTaskStatus(CustomAuth0User user, Map<String,Object> request) {
-        if (
-                !request.containsKey("planner-name") ||
-                        !request.containsKey("task-id") ||
-                        !request.containsKey("task-status")
-        ) {
-            throw new IllegalStateException("Bad request");
-        }
-        final String PLANNER_NAME = request.get("planner-name").toString();
-        final Long TASK_ID = Integer.toUnsignedLong((int) request.get("task-id"));
-        final TaskStatus TASK_STATUS = TaskStatus.valueOf(request.get("task-status").toString());
-
-        Planner planner = plannerRepo.findByUserAndName(user,PLANNER_NAME)
-                .orElseThrow(() -> new IllegalActionException("No planner found to update"));
-        Task toUpdate = taskRepo.getByPlannerAndId(planner,TASK_ID);
-        planner.deleteTask(toUpdate);
-
-        toUpdate.setStatus(TASK_STATUS);
-
-        planner.addTask(toUpdate);
-        plannerRepo.save(planner);
-        return plannerRepo.findByUserAndName(user,PLANNER_NAME)
-                .orElseThrow(() -> new IllegalActionException("could not access planner"));
     }
 
 }
