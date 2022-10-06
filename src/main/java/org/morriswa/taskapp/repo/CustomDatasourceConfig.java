@@ -1,4 +1,4 @@
-package org.morriswa.taskapp.entity;
+package org.morriswa.taskapp.repo;
 
 import org.morriswa.taskapp.service.AmazonSecretServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
