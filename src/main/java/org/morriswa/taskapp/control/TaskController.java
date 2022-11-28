@@ -56,10 +56,7 @@ public class TaskController {
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<?> handleConstraintViolation(
             ConstraintViolationException ex, WebRequest request) {
-        var violations = ex.getConstraintViolations();
-
-        for (var violation : violations) {
-            log.info(violation.getPropertyPath().toString());
+        for (var violation : ex.getConstraintViolations()) {
             if (violation.getPropertyPath().toString().contains("403")) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(new CustomExceptionResponse(violation.getMessage()));
