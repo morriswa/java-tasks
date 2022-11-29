@@ -8,7 +8,6 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 import lombok.extern.slf4j.Slf4j;
-import org.morriswa.taskapp.service.CustomAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.security.core.Authentication;
@@ -24,8 +23,8 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public class JwtValidator implements ConstraintValidator<VerifyJWT,String> {
-    @Autowired
-    private CustomAuthService auth;
+//    @Autowired
+//    private CustomAuthService auth;
     @Autowired
     private Environment env;
 
