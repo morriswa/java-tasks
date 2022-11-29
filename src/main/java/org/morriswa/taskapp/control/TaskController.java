@@ -28,8 +28,7 @@ import java.util.Objects;
 import java.util.Set;
 
 @SuppressWarnings("unused")
-@RestController
-@CrossOrigin
+@RestController @CrossOrigin
 @RequestMapping(path = "${server.path}/") @Slf4j @Validated
 public class TaskController {
     private final CustomAuthService authService;
@@ -72,6 +71,8 @@ public class TaskController {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> err(Exception e, WebRequest r) {
+        log.error(e.getMessage());
+        log.trace(e.getMessage(),e);
         return Objects.equals(env.getProperty("server.debug"), "TRUE") ?
                 ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new CustomExceptionResponse(e.getMessage(), e))
                 : ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new CustomExceptionResponse(e.getMessage()));

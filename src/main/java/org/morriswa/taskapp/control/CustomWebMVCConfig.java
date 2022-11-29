@@ -18,6 +18,6 @@ public class CustomWebMVCConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         // Adds JWT filter to all /tasks/dev/ endpoints...
-        registry.addInterceptor(jwt_pp).addPathPatterns(path + "/*");
+        registry.addInterceptor(jwt_pp).addPathPatterns(path + "/**");
     }
 }

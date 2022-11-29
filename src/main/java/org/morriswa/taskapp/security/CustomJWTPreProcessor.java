@@ -36,7 +36,7 @@ public class CustomJWTPreProcessor extends WebRequestHandlerInterceptorAdapter {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         if (request.getHeader("Authorization") == null) {
-            throw new AuthenticationFailedException("No 'Authorization' header found on request...");
+            return super.preHandle(request, response, handler);
         }
 
         JwkProvider provider = new UrlJwkProvider(Objects.requireNonNull(env.getProperty("auth0.domain")));

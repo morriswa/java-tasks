@@ -25,6 +25,15 @@ public class JWTScopeValidator implements ConstraintValidator<VerifyJWTScope,Obj
     public boolean isValid(Object authorization_header, ConstraintValidatorContext constraintValidatorContext) {
         List<String> required_scopes = new ArrayList<>(scopes);
 
+        if (!SecurityContextHolder.getContext().getAuthentication().isAuthenticated()) {
+//                throw new AuthenticationFailedException("Not authenticated!");
+            constraintValidatorContext
+                    .buildConstraintViolationWithTemplate("Could not determine Authentication status!")
+                    .addPropertyNode("error").addBeanNode().inIterable().atKey("401")
+                    .addConstraintViolation();
+            return false;
+        }
+
         var jwt_authorities =
                 SecurityContextHolder
                 .getContext()
