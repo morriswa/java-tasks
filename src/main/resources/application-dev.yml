@@ -1,5 +1,5 @@
 server:
-  path: tasks/dev/
+  path: /tasks/dev
   port: 8080
   error.include-message: always
   debug: TRUE

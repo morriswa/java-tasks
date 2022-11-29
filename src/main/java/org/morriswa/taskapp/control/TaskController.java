@@ -30,7 +30,7 @@ import java.util.Set;
 @SuppressWarnings("unused")
 @RestController
 @CrossOrigin
-@RequestMapping(path = "${server.path}") @Slf4j @Validated
+@RequestMapping(path = "${server.path}/") @Slf4j @Validated
 public class TaskController {
     private final CustomAuthService authService;
     private final TaskService taskService;

@@ -1,5 +1,5 @@
 server:
-  path: v2/
+  path: /v2
   port: 8080
   error.include-message: always
   debug: False
