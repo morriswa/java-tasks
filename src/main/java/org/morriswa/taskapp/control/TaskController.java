@@ -1,6 +1,5 @@
 package org.morriswa.taskapp.control;
 
-import com.auth0.jwk.JwkException;
 import lombok.extern.slf4j.Slf4j;
 import org.morriswa.taskapp.entity.CustomAuth0User;
 import org.morriswa.taskapp.entity.Planner;
@@ -11,7 +10,7 @@ import org.morriswa.taskapp.exception.RegistrationFailedException;
 import org.morriswa.taskapp.exception.RequestFailedException;
 import org.morriswa.taskapp.service.CustomAuthService;
 import org.morriswa.taskapp.service.TaskService;
-import org.morriswa.taskapp.validation.VerifyJWT;
+import org.morriswa.taskapp.validation.VerifyJWTScope;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -74,23 +73,24 @@ public class TaskController {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> err(Exception e, WebRequest r) {
         return Objects.equals(env.getProperty("server.debug"), "TRUE") ?
-                ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new CustomExceptionResponse(e.getMessage(), e))
-                : ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new CustomExceptionResponse(e.getMessage()));
+                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new CustomExceptionResponse(e.getMessage(), e))
+                : ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new CustomExceptionResponse(e.getMessage()));
     }
 
 
     // LOGIN ENDPOINTS
     @PostMapping(path = "login")
-    public ResponseEntity<?> registerUser(@RequestHeader @VerifyJWT String Authorization,
-                                          @RequestHeader String email)
-            throws RegistrationFailedException, AuthenticationFailedException {
+//    @VerifyJWT
+    public ResponseEntity<?> registerUser(@RequestHeader String email)
+            throws RegistrationFailedException, AuthenticationFailedException
+    {
         CustomAuth0User newUser = this.authService.registerFlow(
                 SecurityContextHolder.getContext().getAuthentication(),email);
         CustomAuth0User confirmNewUser = this.authService.loginFlow(
                 SecurityContextHolder.getContext().getAuthentication(),email);
 
         Map<String, Object> map = new HashMap<>();
-        map.put("derived_auth", Authorization);
+        map.put("derived_auth", SecurityContextHolder.getContext().getAuthentication().getName());
         map.put("message", String.format("User with email %s, ID %S registered successfully.",
                 confirmNewUser.getEmail(),confirmNewUser.getOnlineId()));
 
@@ -98,10 +98,9 @@ public class TaskController {
     }
 
     @GetMapping(path = "login")
-//    @PreAuthorize("@customAuthService.requireJwt(#Authorization,\"read:profile\")")
-    public ResponseEntity<?> login(@RequestHeader @VerifyJWT(scopes = "read:profile") String Authorization ,
-                                   @RequestHeader String email)
-            throws AuthenticationFailedException {
+    @VerifyJWTScope(scopes = "read:profile")
+    public ResponseEntity<?> login(@RequestHeader String email) throws AuthenticationFailedException
+    {
         CustomAuth0User newUser = this.authService.loginFlow(
                 SecurityContextHolder.getContext().getAuthentication(), email);
         Map<String, Object> response = new HashMap<>();
@@ -109,6 +108,7 @@ public class TaskController {
                 String.format(  "User with email %s, ID %S authenticated successfully.",
                                 newUser.getEmail(),
                                 newUser.getOnlineId()));
+        response.put("derived_auth", SecurityContextHolder.getContext().getAuthentication().getName());
 
         return ResponseEntity.ok().body(response);
     }
@@ -116,10 +116,10 @@ public class TaskController {
 
     // PROFILE ENDPOINTS
     @GetMapping(path = "profile")
-//    @PreAuthorize("@customAuthService.requireJwt(#Authorization,\"read:profile\")")
-    public ResponseEntity<?> getUserProfile(@RequestHeader @VerifyJWT(scopes = "read:profile") String Authorization,
-                                            @RequestHeader String email)
-            throws AuthenticationFailedException, JwkException {
+    @VerifyJWTScope(scopes = "read:profile")
+    public ResponseEntity<?> getUserProfile(@RequestHeader String email)
+            throws AuthenticationFailedException
+    {
         CustomAuth0User authenticatedUser = this.authService.loginFlow(
                 SecurityContextHolder.getContext().getAuthentication(), email);
         UserProfile profile = this.taskService.profileGet(authenticatedUser);
@@ -127,14 +127,10 @@ public class TaskController {
     }
 
     @PatchMapping(path = "profile")
-//    @PreAuthorize("@customAuthService.requireJwt(#Authorization,\"read:profile write:profile\")")
+    @VerifyJWTScope(scopes = {"read:profile","write:profile"})
     public ResponseEntity<?> updateUserProfile(@RequestHeader String email,
-                                               @RequestHeader
-                                               @VerifyJWT(scopes = {"read:profile","write:profile"})
-                                               String Authorization,
-                                               @RequestBody Map<String,Object> request)
-            throws Exception {
-
+                                               @RequestBody Map<String,Object> request) throws Exception
+    {
         CustomAuth0User authenticatedUser = this.authService.loginFlow(
                 SecurityContextHolder.getContext().getAuthentication(), email);
         UserProfile profile = this.taskService.profileUpdate(authenticatedUser,request);
@@ -144,10 +140,10 @@ public class TaskController {
 
     // PLANNER ENDPOINTS
     @GetMapping(path = "planner")
-    public ResponseEntity<?> getPlanner( @RequestHeader @VerifyJWT(scopes = "read:profile") String Authorization,
-                                         @RequestHeader String email,
-                                         @RequestParam Integer planner_id)
-            throws Exception {
+    @VerifyJWTScope(scopes = "read:profile")
+    public ResponseEntity<?> getPlanner(@RequestHeader String email,
+                                        @RequestParam Integer planner_id) throws Exception
+    {
         CustomAuth0User authenticatedUser = this.authService.loginFlow(
                 SecurityContextHolder.getContext().getAuthentication(),email);
         Planner planner = this.taskService.getPlanner(authenticatedUser,Map.of("planner-id",planner_id));
@@ -155,9 +151,9 @@ public class TaskController {
     }
 
     @GetMapping(path = "planners")
-    public ResponseEntity<?> getAllPlanners(@RequestHeader @VerifyJWT(scopes = "read:profile") String Authorization,
-                                            @RequestHeader String email)
-            throws AuthenticationFailedException {
+    @VerifyJWTScope(scopes = "read:profile")
+    public ResponseEntity<?> getAllPlanners(@RequestHeader String email) throws AuthenticationFailedException
+    {
         CustomAuth0User authenticatedUser = this.authService.loginFlow(
                 SecurityContextHolder.getContext().getAuthentication(),email);
         Set<Planner> planners = this.taskService.getAllPlanners(authenticatedUser);
@@ -165,12 +161,10 @@ public class TaskController {
     }
 
     @PostMapping(path = "planner")
-    public ResponseEntity<?> addPlannerToProfile(@RequestHeader
-                                                 @VerifyJWT(scopes = {"read:profile","write:profile"})
-                                                 String Authorization,
-                                             @RequestHeader String email,
-                                             @RequestBody Map<String,Object> request)
-            throws Exception {
+    @VerifyJWTScope(scopes = {"read:profile","write:profile"})
+    public ResponseEntity<?> addPlannerToProfile(@RequestHeader String email,
+                                                 @RequestBody Map<String,Object> request) throws Exception
+    {
         CustomAuth0User authenticatedUser = this.authService.loginFlow(
                 SecurityContextHolder.getContext().getAuthentication(),email);
         Set<Planner> planners = this.taskService.plannerAdd(authenticatedUser,request);
@@ -178,12 +172,10 @@ public class TaskController {
     }
 
     @DeleteMapping(path = "planner")
-    public ResponseEntity<?> plannerDel(@RequestHeader
-                                        @VerifyJWT(scopes = {"read:profile","write:profile"})
-                                        String Authorization,
-                                    @RequestHeader String email,
-                                    @RequestBody Map<String,Object> request)
-            throws Exception {
+    @VerifyJWTScope(scopes = {"read:profile","write:profile"})
+    public ResponseEntity<?> plannerDel(@RequestHeader String email,
+                                        @RequestBody Map<String,Object> request) throws Exception
+    {
         CustomAuth0User authenticatedUser = this.authService.loginFlow(
                 SecurityContextHolder.getContext().getAuthentication(),email);
         Set<Planner> planners = this.taskService.plannerDel(authenticatedUser,request);
@@ -191,12 +183,11 @@ public class TaskController {
     }
 
     @PatchMapping(path = "planner")
-    public ResponseEntity<?> updatePlanner(@RequestHeader
-                                           @VerifyJWT(scopes = {"read:profile","write:profile"})
-                                           String Authorization,
-                                        @RequestHeader String email,
-                                        @RequestBody Map<String,Object> request)
-            throws RequestFailedException, AuthenticationFailedException {
+    @VerifyJWTScope(scopes = {"read:profile","write:profile"})
+    public ResponseEntity<?> updatePlanner(@RequestHeader String email,
+                                           @RequestBody Map<String,Object> request)
+            throws RequestFailedException, AuthenticationFailedException
+    {
         CustomAuth0User authenticatedUser = this.authService.loginFlow(
                 SecurityContextHolder.getContext().getAuthentication(),email);
         Planner planner = this.taskService.updatePlanner(authenticatedUser,request);
@@ -206,12 +197,10 @@ public class TaskController {
 
     // TASK ENDPOINTS
     @PostMapping(path = "task")
-    public ResponseEntity<?> addTask(@RequestHeader
-                                     @VerifyJWT(scopes = {"read:profile","write:profile"})
-                                     String Authorization,
-                                           @RequestHeader String email,
-                                           @RequestBody Map<String,Object> request)
-            throws Exception {
+    @VerifyJWTScope(scopes = {"read:profile","write:profile"})
+    public ResponseEntity<?> addTask(@RequestHeader String email,
+                                     @RequestBody Map<String,Object> request) throws Exception
+    {
         CustomAuth0User authenticatedUser = this.authService.loginFlow(
                 SecurityContextHolder.getContext().getAuthentication(),email);
         Planner planner = this.taskService.taskAdd(authenticatedUser,request);
@@ -219,12 +208,10 @@ public class TaskController {
     }
 
     @DeleteMapping(path = "task")
-    public ResponseEntity<?> delTask(@RequestHeader
-                                     @VerifyJWT(scopes = {"read:profile","write:profile"})
-                                     String Authorization,
-                                 @RequestHeader String email,
-                                 @RequestBody Map<String,Object> request)
-            throws Exception {
+    @VerifyJWTScope(scopes = {"read:profile","write:profile"})
+    public ResponseEntity<?> delTask(@RequestHeader String email,
+                                     @RequestBody Map<String,Object> request) throws Exception
+    {
         CustomAuth0User authenticatedUser = this.authService.loginFlow(
                 SecurityContextHolder.getContext().getAuthentication(),email);
         Planner planner = this.taskService.taskDel(authenticatedUser,request);
@@ -232,12 +219,10 @@ public class TaskController {
     }
 
     @PatchMapping(path = "task")
-    public ResponseEntity<?> updateTask(@RequestHeader
-                                        @VerifyJWT(scopes = {"read:profile","write:profile"})
-                                        String Authorization,
-                                     @RequestHeader String email,
-                                     @RequestBody Map<String,Object> request)
-            throws Exception {
+    @VerifyJWTScope(scopes = {"read:profile","write:profile"})
+    public ResponseEntity<?> updateTask(@RequestHeader String email,
+                                        @RequestBody Map<String,Object> request) throws Exception
+    {
         CustomAuth0User authenticatedUser = this.authService.loginFlow(
                 SecurityContextHolder.getContext().getAuthentication(),email);
         Planner planner = this.taskService.updateTask(authenticatedUser,request);
