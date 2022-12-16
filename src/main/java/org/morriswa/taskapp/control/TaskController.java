@@ -73,14 +73,15 @@ public class TaskController {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> err(Exception e, WebRequest r) {
+        log.error(e.getMessage());
         return Objects.equals(env.getProperty("server.debug"), "TRUE") ?
-                ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new CustomExceptionResponse(e.getMessage(), e))
-                : ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new CustomExceptionResponse(e.getMessage()));
+                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new CustomExceptionResponse(e.getMessage(), e))
+                : ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new CustomExceptionResponse(e.getMessage()));
     }
 
 
     // LOGIN ENDPOINTS
-    @PostMapping(path = "login")
+    @PostMapping(path = "/login")
     public ResponseEntity<?> registerUser(@RequestHeader @VerifyJWT String Authorization,
                                           @RequestHeader String email)
             throws RegistrationFailedException, AuthenticationFailedException {
@@ -97,7 +98,7 @@ public class TaskController {
         return ResponseEntity.ok(map);
     }
 
-    @GetMapping(path = "login")
+    @GetMapping(path = "/login")
 //    @PreAuthorize("@customAuthService.requireJwt(#Authorization,\"read:profile\")")
     public ResponseEntity<?> login(@RequestHeader @VerifyJWT(scopes = "read:profile") String Authorization ,
                                    @RequestHeader String email)
@@ -115,7 +116,7 @@ public class TaskController {
 
 
     // PROFILE ENDPOINTS
-    @GetMapping(path = "profile")
+    @GetMapping(path = "/profile")
 //    @PreAuthorize("@customAuthService.requireJwt(#Authorization,\"read:profile\")")
     public ResponseEntity<?> getUserProfile(@RequestHeader @VerifyJWT(scopes = "read:profile") String Authorization,
                                             @RequestHeader String email)
@@ -126,7 +127,7 @@ public class TaskController {
         return ResponseEntity.ok(profile);
     }
 
-    @PatchMapping(path = "profile")
+    @PatchMapping(path = "/profile")
 //    @PreAuthorize("@customAuthService.requireJwt(#Authorization,\"read:profile write:profile\")")
     public ResponseEntity<?> updateUserProfile(@RequestHeader String email,
                                                @RequestHeader
@@ -143,7 +144,7 @@ public class TaskController {
 
 
     // PLANNER ENDPOINTS
-    @GetMapping(path = "planner")
+    @GetMapping(path = "/planner")
     public ResponseEntity<?> getPlanner( @RequestHeader @VerifyJWT(scopes = "read:profile") String Authorization,
                                          @RequestHeader String email,
                                          @RequestParam Integer planner_id)
@@ -154,7 +155,7 @@ public class TaskController {
         return ResponseEntity.ok(planner);
     }
 
-    @GetMapping(path = "planners")
+    @GetMapping(path = "/planners")
     public ResponseEntity<?> getAllPlanners(@RequestHeader @VerifyJWT(scopes = "read:profile") String Authorization,
                                             @RequestHeader String email)
             throws AuthenticationFailedException {
@@ -164,7 +165,7 @@ public class TaskController {
         return ResponseEntity.ok(planners);
     }
 
-    @PostMapping(path = "planner")
+    @PostMapping(path = "/planner")
     public ResponseEntity<?> addPlannerToProfile(@RequestHeader
                                                  @VerifyJWT(scopes = {"read:profile","write:profile"})
                                                  String Authorization,
@@ -177,7 +178,7 @@ public class TaskController {
         return ResponseEntity.ok(planners);
     }
 
-    @DeleteMapping(path = "planner")
+    @DeleteMapping(path = "/planner")
     public ResponseEntity<?> plannerDel(@RequestHeader
                                         @VerifyJWT(scopes = {"read:profile","write:profile"})
                                         String Authorization,
@@ -190,7 +191,7 @@ public class TaskController {
         return ResponseEntity.ok(planners);
     }
 
-    @PatchMapping(path = "planner")
+    @PatchMapping(path = "/planner")
     public ResponseEntity<?> updatePlanner(@RequestHeader
                                            @VerifyJWT(scopes = {"read:profile","write:profile"})
                                            String Authorization,
@@ -205,7 +206,7 @@ public class TaskController {
 
 
     // TASK ENDPOINTS
-    @PostMapping(path = "task")
+    @PostMapping(path = "/task")
     public ResponseEntity<?> addTask(@RequestHeader
                                      @VerifyJWT(scopes = {"read:profile","write:profile"})
                                      String Authorization,
@@ -218,7 +219,7 @@ public class TaskController {
         return ResponseEntity.ok(planner);
     }
 
-    @DeleteMapping(path = "task")
+    @DeleteMapping(path = "/task")
     public ResponseEntity<?> delTask(@RequestHeader
                                      @VerifyJWT(scopes = {"read:profile","write:profile"})
                                      String Authorization,
@@ -231,7 +232,7 @@ public class TaskController {
         return ResponseEntity.ok(planner);
     }
 
-    @PatchMapping(path = "task")
+    @PatchMapping(path = "/task")
     public ResponseEntity<?> updateTask(@RequestHeader
                                         @VerifyJWT(scopes = {"read:profile","write:profile"})
                                         String Authorization,
