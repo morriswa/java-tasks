@@ -1,6 +1,5 @@
-package org.morriswa.taskapp.repo;
+package org.morriswa.taskapp.config;
 
-import org.morriswa.taskapp.service.AmazonSecretServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;

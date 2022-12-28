@@ -1,0 +1,1 @@
+docker run -p 8080:8080 --add-host=host.docker.internal:host-gateway --env AWS_ACCESS_KEY_ID=AKIAZPTJVD5XKDU5GAVZ --env AWS_SECRET_ACCESS_KEY=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 --env AWS_REGION=us-east-2 5991b3c7236a

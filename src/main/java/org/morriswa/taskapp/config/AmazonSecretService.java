@@ -1,20 +1,19 @@
-package org.morriswa.taskapp.security;
+package org.morriswa.taskapp.config;
 
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.amazonaws.services.secretsmanager.AWSSecretsManagerClientBuilder;
 import com.amazonaws.services.secretsmanager.model.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.stereotype.Service;
 
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-@Service @SuppressWarnings("unchecked")
+@SuppressWarnings("unchecked")
 public class AmazonSecretService {
 
-    public static Map<String, Object> getSecret(String secretName,String region) throws JsonProcessingException {
+    protected static Map<String, Object> getSecret(String secretName, String region) throws JsonProcessingException {
         // Create a Secrets Manager client
         AWSSecretsManager client  = AWSSecretsManagerClientBuilder.standard()
                 .withRegion(region)

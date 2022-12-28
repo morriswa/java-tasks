@@ -6,12 +6,16 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/tasks
+    url: jdbc:postgresql://host.docker.internal:5432/tasks
     username: postgres
   jpa:
     hibernate.ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   banner.location: classpath:banner.txt
+
+hibernate:
+  dialect: org.hibernate.dialect.PostgreSQLDialect
+  show-sql: true
 
 ## DEV ENV
 auth0.audience: "http://localhost:8080/tasks/dev/"

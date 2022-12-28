@@ -13,12 +13,13 @@
 
     <name>MorrisWA Tasks API</name>
     <artifactId>task-app-api</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.1</version>
 
     <properties>
-        <maven.compiler.source>18</maven.compiler.source>
-        <maven.compiler.target>18</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <start-class>org.morriswa.taskapp.TaskApp</start-class>
     </properties>
 
     <dependencies>
@@ -47,14 +48,14 @@
         <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
-            <version>4.0.0</version>
+            <version>4.2.1</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk -->
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk</artifactId>
-            <version>1.12.315</version>
+            <version>1.12.364</version>
         </dependency>
 
 

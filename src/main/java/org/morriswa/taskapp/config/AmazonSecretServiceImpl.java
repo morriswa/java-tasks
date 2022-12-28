@@ -1,13 +1,11 @@
-package org.morriswa.taskapp.service;
+package org.morriswa.taskapp.config;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.morriswa.taskapp.security.AmazonSecretService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
-import java.util.Objects;
 
 @Service
 public class AmazonSecretServiceImpl extends AmazonSecretService
@@ -22,10 +20,9 @@ public class AmazonSecretServiceImpl extends AmazonSecretService
     }
 
     public String retrieveKey(String key) {
-        Object secret = this.secrets.get(key);
-        if (Objects.isNull(secret)) {
-            throw new NullPointerException(String.format("No secret found with key:%s",key));
+        if (this.secrets.containsKey(key)) {
+            return (String) this.secrets.get(key);
         }
-        return (String) secret;
+        throw new NullPointerException(String.format("No secret found with key:%s",key));
     }
 }
