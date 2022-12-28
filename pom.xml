@@ -13,7 +13,7 @@
 
     <name>MorrisWA Tasks API</name>
     <artifactId>task-app-api</artifactId>
-    <version>1.2.1</version>
+    <version>1.3.0-SNAPSHOT</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -58,6 +58,12 @@
             <version>1.12.364</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-text -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>1.10.0</version>
+        </dependency>
 
         <dependency>
             <groupId>org.postgresql</groupId>

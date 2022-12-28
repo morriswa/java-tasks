@@ -1,5 +1,6 @@
 package org.morriswa.taskapp.service;
 
+import org.apache.commons.lang3.StringUtils;
 import org.morriswa.taskapp.entity.CustomAuth0User;
 import org.morriswa.taskapp.entity.Planner;
 import org.morriswa.taskapp.entity.Task;
@@ -27,6 +28,8 @@ public class TaskService {
     private final UserProfileRepo profileRepo;
     private final PlannerRepo plannerRepo;
     private final TaskRepo taskRepo;
+    private final GregorianCalendar gc = new GregorianCalendar();
+
 
     @Autowired
     public TaskService(UserProfileRepo p,PlannerRepo pr,TaskRepo tr) {
@@ -84,8 +87,6 @@ public class TaskService {
     public Set<Planner> plannerAdd(CustomAuth0User user, Map<String,Object> newPlannerRequest)
             throws Exception
     {
-        GregorianCalendar gc = new GregorianCalendar();
-
         final String PLANNER_NAME = newPlannerRequest.get("planner-name").toString();
 
         if (plannerRepo.existsByUserAndName(user,PLANNER_NAME)) {
@@ -93,7 +94,7 @@ public class TaskService {
                     String.format("Planner with name %s already exists for user %s",PLANNER_NAME,user.getOnlineId()));
         }
 
-        if (PLANNER_NAME.equals("")) {
+        if (StringUtils.isBlank(PLANNER_NAME)) {
             throw new RequestFailedException("Planner cannot have no name");
         }
 
@@ -134,7 +135,6 @@ public class TaskService {
     public Planner updatePlanner(CustomAuth0User user,Map<String,Object> request)
             throws RequestFailedException
     {
-        GregorianCalendar gc = new GregorianCalendar();
         final Long PLANNER_ID = Integer.toUnsignedLong((int) request.get("planner-id"));
 
         Planner planner = plannerRepo.findByUserAndId(user,PLANNER_ID)
@@ -168,8 +168,6 @@ public class TaskService {
     public Planner taskAdd(CustomAuth0User user, Map<String,Object> request)
             throws Exception
     {
-        GregorianCalendar gc = new GregorianCalendar();
-
         final Long PLANNER_ID = Integer.toUnsignedLong((int) request.get("planner-id"));
         final String TASK_NAME = request.get("task-name").toString();
 
@@ -177,7 +175,6 @@ public class TaskService {
                 .orElseThrow(noPlannerFoundException(PLANNER_ID,user));
         Task.TaskBuilder newTask = Task.builder()
                 .planner(planner).title(TASK_NAME).creationDate(new GregorianCalendar());
-
 
         if (request.containsKey("start-greg")) {
             gc.setTimeInMillis((Long) request.get("start-greg"));
@@ -252,7 +249,6 @@ public class TaskService {
     public Planner updateTask(CustomAuth0User user, Map<String,Object> request)
             throws Exception
     {
-        GregorianCalendar gc = new GregorianCalendar();
         final Long PLANNER_ID = Integer.toUnsignedLong((int) request.get("planner-id"));
         final Long TASK_ID = Integer.toUnsignedLong((int)  request.get("task-id"));
 
