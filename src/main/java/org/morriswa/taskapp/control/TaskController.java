@@ -4,15 +4,14 @@ import org.morriswa.taskapp.entity.CustomAuth0User;
 import org.morriswa.taskapp.entity.Planner;
 import org.morriswa.taskapp.entity.UserProfile;
 import org.morriswa.taskapp.exception.AuthenticationFailedException;
+import org.morriswa.taskapp.exception.BadRequestException;
 import org.morriswa.taskapp.exception.RegistrationFailedException;
-import org.morriswa.taskapp.exception.RequestFailedException;
 import org.morriswa.taskapp.service.CustomAuthService;
 import org.morriswa.taskapp.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.MissingRequestValueException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
 
@@ -28,6 +27,8 @@ public class TaskController {
     private final CustomAuthService authService;
     private final TaskService taskService;
     private final Environment env;
+
+
     @Autowired
     public TaskController(CustomAuthService a,TaskService s,Environment e) {
         this.authService = a;
@@ -36,7 +37,7 @@ public class TaskController {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> err(Exception e, WebRequest r) {
+    public ResponseEntity<?> internalServerError(Exception e, WebRequest r) {
         boolean include_stack = "TRUE".equals(env.getProperty("server.debug"));
         Map<String, Object> response = new HashMap<>(){{
             put("error", e.getMessage());
@@ -48,17 +49,44 @@ public class TaskController {
         return ResponseEntity.internalServerError().body(response);
     }
 
-    // Exception handling
     @ExceptionHandler({
-            AccessDeniedException.class, // default exception thrown when @PreAuthorize queries fail...
             AuthenticationFailedException.class // thrown when user ID and email do not match
     })
-    public ResponseEntity<?> auth_err(Exception e, WebRequest r) {
+    public ResponseEntity<?> unauthorized(Exception e, WebRequest r) {
         Map<String, Object> response = new HashMap<>(){{
             put("error", e.getMessage());
         }};
         return ResponseEntity.status(401).body(response);
     }
+
+//    @ExceptionHandler({
+//            AccessDeniedException.class, // default exception thrown when @PreAuthorize queries fail...
+//    })
+//    public ResponseEntity<?> forbidden(Exception e, WebRequest r) {
+//        Map<String, Object> response = new HashMap<>(){{
+//            put("error", "Insufficient Scope...");
+//            put("message", e.getMessage());
+//            put("timestamp", new GregorianCalendar().toZonedDateTime().toString());
+//        }};
+//        return ResponseEntity.status(403).body(response);
+//    }
+
+    @ExceptionHandler({
+            BadRequestException.class,
+            MissingRequestValueException.class
+    })
+    public ResponseEntity<?> badRequest(Exception e, WebRequest r) {
+        boolean include_stack = "TRUE".equals(env.getProperty("server.debug"));
+        Map<String, Object> response = new HashMap<>(){{
+            put("error", e.getMessage());
+            if (include_stack) {
+                put("stack",e);
+            }
+        }};
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
 
     // LOGIN ENDPOINTS
     @PostMapping(path = "login")
@@ -78,7 +106,6 @@ public class TaskController {
     }
 
     @GetMapping(path = "login")
-    @PreAuthorize("hasAuthority('SCOPE_read:profile')")
     public ResponseEntity<?> login(Principal principal, @RequestHeader String email)
             throws AuthenticationFailedException
     {
@@ -95,9 +122,10 @@ public class TaskController {
 
 
     // PROFILE ENDPOINTS
-    @GetMapping(path = "profile") @PreAuthorize("hasAuthority('SCOPE_read:profile')")
+    @GetMapping(path = "profile")
     public ResponseEntity<?> getUserProfile(Principal principal, @RequestHeader String email)
             throws AuthenticationFailedException {
+
         CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
         UserProfile profile = this.taskService.profileGet(authenticatedUser);
 
@@ -127,11 +155,11 @@ public class TaskController {
 
     // PLANNER ENDPOINTS
     @GetMapping(path = "planner")
-    public ResponseEntity<?> getPlanner( Principal principal,
-                                         @RequestHeader String email,
-                                         @RequestParam Integer planner_id) throws Exception {
+    public ResponseEntity<?> getPlanner(Principal principal,
+                                        @RequestHeader String email,
+                                        @RequestParam Integer id) throws Exception {
         CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
-        Planner planner = this.taskService.getPlanner(authenticatedUser,Map.of("planner-id",planner_id));
+        Planner planner = this.taskService.getPlanner(authenticatedUser,Map.of("planner-id",id));
 
         Map<String, Object> response = new HashMap<>(){{
             put("message","Successfully retrieved Planner...");
@@ -185,8 +213,7 @@ public class TaskController {
     public ResponseEntity<?> updatePlanner(Principal principal,
                                         @RequestHeader String email,
                                         @RequestBody Map<String,Object> request)
-            throws AuthenticationFailedException, RequestFailedException
-    {
+            throws AuthenticationFailedException, MissingRequestValueException, BadRequestException {
         CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
         Planner planner = this.taskService.updatePlanner(authenticatedUser,request);
         Map<String, Object> response = new HashMap<>(){{
