@@ -30,7 +30,10 @@ jobs:
     - name: Build with Maven
       run: |
         mvn -B package --file pom.xml
-        mkdir ~/output && cp -a ./target/. ~/output/
+        mkdir ~/output 
+        cp -a ./target/. ~/output/
+        cp Dockerfile ~/output/
+        
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
