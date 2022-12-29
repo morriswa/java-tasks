@@ -39,7 +39,7 @@ jobs:
       id: project
 
     - name: Show extracted Maven project version
-      run: echo "Attempting to Publish Task-App-API v${{ steps.project.outputs.version }}"
+      run: echo ${{ format('Attempting to Publish Task-App-API v{0}', steps.project.outputs.version) }}
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
@@ -56,5 +56,5 @@ jobs:
       name: Build and Publish to Docker Hub
       run: |
         cd ~/output
-        docker build . -t morriswa/task-app-api:{{ steps.project.outputs.version }}
+        docker build . -t morriswa/task-app-api:${{ steps.project.outputs.version }}
         docker push morriswa/task-app-api:latest
