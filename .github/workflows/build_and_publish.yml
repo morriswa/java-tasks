@@ -45,11 +45,10 @@ jobs:
       
     -
       name: Build and Publish to Docker Hub
-      uses: docker/build-push-action@v3
-      with:
-        context: /home/runner/output/
-        push: true
-        tags: morriswa/task-app-api:latest
+      run: |
+        cd ~/output
+        docker build . -t morriswa/task-app-api:latest
+        docker push morriswa/task-app-api:latest
       
       
     
