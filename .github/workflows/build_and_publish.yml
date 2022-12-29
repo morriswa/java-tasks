@@ -34,6 +34,12 @@ jobs:
         cp -a target/. ~/output/target/
         cp Dockerfile ~/output/
         
+    - name: Extract Maven project version
+      run: echo ::set-output name=version::$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
+      id: project
+
+    - name: Show extracted Maven project version
+      run: echo ${{ steps.project.outputs.version }}
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
@@ -52,6 +58,3 @@ jobs:
         cd ~/output
         docker build . -t morriswa/task-app-api:latest
         docker push morriswa/task-app-api:latest
-      
-      
-    
