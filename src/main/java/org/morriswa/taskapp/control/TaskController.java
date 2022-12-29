@@ -11,14 +11,11 @@ import org.morriswa.taskapp.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.MissingRequestValueException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
 
 import java.security.Principal;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -62,17 +59,17 @@ public class TaskController {
         return ResponseEntity.status(401).body(response);
     }
 
-    @ExceptionHandler({
-            AccessDeniedException.class, // default exception thrown when @PreAuthorize queries fail...
-    })
-    public ResponseEntity<?> forbidden(Exception e, WebRequest r) {
-        Map<String, Object> response = new HashMap<>(){{
-            put("error", "Insufficient Scope...");
-            put("message", e.getMessage());
-            put("timestamp", new GregorianCalendar().toZonedDateTime().toString());
-        }};
-        return ResponseEntity.status(403).body(response);
-    }
+//    @ExceptionHandler({
+//            AccessDeniedException.class, // default exception thrown when @PreAuthorize queries fail...
+//    })
+//    public ResponseEntity<?> forbidden(Exception e, WebRequest r) {
+//        Map<String, Object> response = new HashMap<>(){{
+//            put("error", "Insufficient Scope...");
+//            put("message", e.getMessage());
+//            put("timestamp", new GregorianCalendar().toZonedDateTime().toString());
+//        }};
+//        return ResponseEntity.status(403).body(response);
+//    }
 
     @ExceptionHandler({
             BadRequestException.class,
@@ -109,7 +106,6 @@ public class TaskController {
     }
 
     @GetMapping(path = "login")
-    @PreAuthorize("hasAuthority('SCOPE_read:profile')")
     public ResponseEntity<?> login(Principal principal, @RequestHeader String email)
             throws AuthenticationFailedException
     {

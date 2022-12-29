@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.ObjectPostProcessor;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -22,9 +21,7 @@ import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig
-
 {
     private final ObjectMapper objectMapper = new ObjectMapper();
     @Value("${auth0.audience}")
@@ -55,7 +52,12 @@ public class WebSecurityConfig
             .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
 
-            .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
+            .authorizeHttpRequests(authorize -> authorize
+//                    .anyRequest().authenticated()
+                    .mvcMatchers("/" + path + "**").hasAuthority("SCOPE_read:profile")
+                    .mvcMatchers("/health").permitAll()
+                    .anyRequest().denyAll())
+                // Exception Handling for Unauthorized requests
                 .exceptionHandling().authenticationEntryPoint((request, response, authException) -> {
                     Map<String, Object> custom_error_response = new HashMap<>() {{
                         put("error", "YOU SHALL NOT PASS");
@@ -69,14 +71,12 @@ public class WebSecurityConfig
                     response.setContentType("application/json");
                     response.setStatus(401);
                 }).and()
-//                .mvcMatchers("/" + path + "**").hasAuthority("SCOPE_read:bs")
-//                .mvcMatchers("/health").permitAll()
-//                .anyRequest().denyAll())
 
             .oauth2ResourceServer()
             .jwt().and().withObjectPostProcessor(new ObjectPostProcessor<BearerTokenAuthenticationFilter>() {
                 @Override
                 public <O extends BearerTokenAuthenticationFilter> O postProcess(O filter) {
+                    // Exception Handling for insufficiently authenticated requests
                     filter.setAuthenticationFailureHandler((request, response, exception) -> {
                         Map<String, Object> custom_error_response = new HashMap<>() {{
                             put("error", "invalid jwt");
@@ -95,6 +95,7 @@ public class WebSecurityConfig
                     return filter;
                 }
             })
+            // Exception Handling for forbidden requests
             .accessDeniedHandler((request, response, accessDeniedException) -> {
                 Map<String, Object> custom_error_response = new HashMap<>() {{
                     put("error", "insufficient scope");
