@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
 
 import java.security.Principal;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -29,6 +30,8 @@ public class TaskController {
     private final CustomAuthService authService;
     private final TaskService taskService;
     private final Environment env;
+
+
     @Autowired
     public TaskController(CustomAuthService a,TaskService s,Environment e) {
         this.authService = a;
@@ -50,7 +53,6 @@ public class TaskController {
     }
 
     @ExceptionHandler({
-            AccessDeniedException.class, // default exception thrown when @PreAuthorize queries fail...
             AuthenticationFailedException.class // thrown when user ID and email do not match
     })
     public ResponseEntity<?> unauthorized(Exception e, WebRequest r) {
@@ -58,6 +60,18 @@ public class TaskController {
             put("error", e.getMessage());
         }};
         return ResponseEntity.status(401).body(response);
+    }
+
+    @ExceptionHandler({
+            AccessDeniedException.class, // default exception thrown when @PreAuthorize queries fail...
+    })
+    public ResponseEntity<?> forbidden(Exception e, WebRequest r) {
+        Map<String, Object> response = new HashMap<>(){{
+            put("error", "Insufficient Scope...");
+            put("message", e.getMessage());
+            put("timestamp", new GregorianCalendar().toZonedDateTime().toString());
+        }};
+        return ResponseEntity.status(403).body(response);
     }
 
     @ExceptionHandler({
@@ -112,9 +126,10 @@ public class TaskController {
 
 
     // PROFILE ENDPOINTS
-    @GetMapping(path = "profile") @PreAuthorize("hasAuthority('SCOPE_read:profile')")
+    @GetMapping(path = "profile")
     public ResponseEntity<?> getUserProfile(Principal principal, @RequestHeader String email)
             throws AuthenticationFailedException {
+
         CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
         UserProfile profile = this.taskService.profileGet(authenticatedUser);
 
