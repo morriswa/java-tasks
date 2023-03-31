@@ -9,4 +9,6 @@ public interface UserProfileRepo extends JpaRepository<UserProfile,Long> {
     public Optional<UserProfile> findByUser(UserProfile user);
 
     boolean existsByUser(UserProfile newUser);
+
+    Optional<UserProfile> findByOnlineId(String onlineId);
 }
