@@ -8,4 +8,5 @@ import java.util.Optional;
 
 public interface TaskRepo extends JpaRepository<Task,Long> {
     Optional<Task> findByPlannerAndId(Planner planner, Long task_id);
+    Optional<Task> findByIdAndOnlineId(Long taskId, String onlineId);
 }

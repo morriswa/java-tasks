@@ -1,4 +1,4 @@
-package org.morriswa.taskapp.entity;
+package org.morriswa.taskapp.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,24 +6,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.Length;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
-import java.io.Serializable;
 
-@Entity @Table(name = "profile")
 @Data @AllArgsConstructor @NoArgsConstructor @Builder
-public class UserProfile implements Serializable
-{
-    @Id
-    @Column(name ="online_id",unique = true,nullable = false,updatable = false)
+public class UserProfileRequest {
+    @NotBlank
     private String onlineId;
-
-    @Email
-    @Column(name ="email",unique = true,nullable = false)
     private String email;
 
     @Length(max = 20)
