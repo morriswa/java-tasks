@@ -1,7 +1,7 @@
 package org.morriswa.taskapp.service;
 
 import org.morriswa.taskapp.entity.UserProfile;
-import org.morriswa.taskapp.exception.BadRequestException;
+import org.morriswa.common.model.BadRequestException;
 import org.morriswa.taskapp.model.UserProfileRequest;
 
 public interface UserProfileService {

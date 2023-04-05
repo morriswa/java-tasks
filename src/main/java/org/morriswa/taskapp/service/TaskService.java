@@ -1,12 +1,13 @@
 package org.morriswa.taskapp.service;
 
+import jakarta.validation.Valid;
+import org.morriswa.common.model.BadRequestException;
 import org.morriswa.taskapp.entity.Planner;
-import org.morriswa.taskapp.exception.BadRequestException;
+import org.morriswa.taskapp.entity.Task;
 import org.morriswa.taskapp.model.PlannerRequest;
 import org.morriswa.taskapp.model.TaskRequest;
 import org.springframework.web.bind.MissingRequestValueException;
 
-import javax.validation.Valid;
 import java.util.Set;
 
 public interface TaskService {
@@ -18,7 +19,7 @@ public interface TaskService {
     Planner updatePlanner(@Valid PlannerRequest request) throws MissingRequestValueException, BadRequestException;
 
     // Task Actions
-    Planner taskAdd(@Valid TaskRequest request) throws Exception;
+    Set<Task> taskAdd(@Valid TaskRequest request) throws Exception;
     void taskDel(@Valid TaskRequest deleteTaskRequest) throws Exception;
     void updateTask(@Valid TaskRequest request) throws Exception;
 }

@@ -1,22 +1,21 @@
 server:
-  path: tasks/dev/
-  port: 8080
+  path: v0/
+  port: 8081
   error.include-message: always
   debug: TRUE
 
 spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/tasks
-    username: postgres
   jpa:
     hibernate.ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   banner.location: classpath:banner.txt
 
 ## DEV ENV
-auth0.audience: "http://localhost:8080/tasks/dev/"
+auth0:
+  audience: "http://127.0.0.1:8081/v0"
+  scope.secureroutes: "develop:demo"
 spring.security.oauth2.resourceserver.jwt.issuer-uri: "https://dev-9deub659.us.auth0.com/"
 
 aws:
-  secret-name: "dev/tasks/secrets"
+  secret-name: "tasks/local"
   region: "us-east-2"

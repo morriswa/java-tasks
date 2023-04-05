@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import org.morriswa.taskapp.enums.TaskStatus;
 import org.morriswa.taskapp.enums.TaskType;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 @Data @AllArgsConstructor @NoArgsConstructor @Builder
 public class TaskRequest {

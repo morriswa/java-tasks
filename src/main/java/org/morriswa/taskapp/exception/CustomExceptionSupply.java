@@ -1,5 +1,6 @@
 package org.morriswa.taskapp.exception;
 
+import org.morriswa.common.model.BadRequestException;
 import org.morriswa.taskapp.entity.UserProfile;
 import org.morriswa.taskapp.entity.Planner;
 
@@ -44,7 +45,7 @@ public class CustomExceptionSupply {
     public static Supplier<BadRequestException> noTaskFoundException(Long taskId, String onlineId) {
         return () -> new BadRequestException(
                 String.format(
-                        "No task found with ID %s within planner %s for user %s",
+                        "No task found with ID %s for user %s",
                         taskId,
                         onlineId
                 ));

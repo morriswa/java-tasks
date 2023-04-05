@@ -1,9 +1,10 @@
 package org.morriswa.taskapp.control;
 
+import org.morriswa.common.model.BadRequestException;
 import org.morriswa.taskapp.entity.Planner;
+import org.morriswa.taskapp.entity.Task;
 import org.morriswa.taskapp.entity.UserProfile;
 import org.morriswa.taskapp.exception.AuthenticationFailedException;
-import org.morriswa.taskapp.exception.BadRequestException;
 import org.morriswa.taskapp.model.PlannerRequest;
 import org.morriswa.taskapp.model.TaskRequest;
 import org.morriswa.taskapp.model.UserProfileRequest;
@@ -15,11 +16,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.MissingRequestValueException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.context.request.WebRequest;
 
-import javax.validation.ConstraintViolationException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 @SuppressWarnings("unused")
@@ -32,18 +32,6 @@ public class TaskController {
     public TaskController(TaskService s, UserProfileService u, Environment e) {
         this.taskService = s;
         this.userProfileService = u;
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> internalServerError(Exception e, WebRequest r) {
-        return ResponseEntity.internalServerError().body(e);
-    }
-
-    @ExceptionHandler({
-            ConstraintViolationException.class
-    })
-    public ResponseEntity<?> unauthorized(Exception e, WebRequest r) {
-        return ResponseEntity.badRequest().body(e);
     }
 
     // User Profile ENDPOINTS
@@ -80,8 +68,9 @@ public class TaskController {
     // PLANNER ENDPOINTS
     @GetMapping(path = "planner")
     public ResponseEntity<?> getPlanner(JwtAuthenticationToken token,
-                                        @RequestParam Long id) throws Exception {
-        Planner planner = this.taskService.getPlanner(token.getName(),id);
+                                        @RequestParam Optional<Long> id) throws Exception {
+        var plannerId = id.orElse(null);
+        Planner planner = this.taskService.getPlanner(token.getName(),plannerId);
 
         Map<String, Object> response = new HashMap<>(){{
             put("message","Successfully retrieved Planner...");
@@ -148,10 +137,10 @@ public class TaskController {
                                                @RequestBody TaskRequest request) throws Exception
     {
         request.setOnlineId(token.getName());
-        Planner planner = this.taskService.taskAdd(request);
+        Set<Task> tasks = this.taskService.taskAdd(request);
         Map<String, Object> response = new HashMap<>(){{
             put("message","Successfully added Task...");
-            put("planner",planner);
+            put("tasks",tasks);
         }};
         return ResponseEntity.ok().body(response);
     }

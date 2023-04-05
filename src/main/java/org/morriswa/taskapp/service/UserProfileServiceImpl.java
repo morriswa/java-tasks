@@ -1,15 +1,15 @@
 package org.morriswa.taskapp.service;
 
 import org.morriswa.taskapp.entity.UserProfile;
-import org.morriswa.taskapp.exception.BadRequestException;
+import org.morriswa.common.model.BadRequestException;
 import org.morriswa.taskapp.model.UserProfileRequest;
 import org.morriswa.taskapp.repo.UserProfileRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.validation.ConstraintViolationException;
-import javax.validation.Valid;
-import javax.validation.Validator;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Valid;
+import jakarta.validation.Validator;
 
 @Service
 public class UserProfileServiceImpl implements UserProfileService {
@@ -35,6 +35,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     public void updateUserProfile(@Valid UserProfileRequest request) {
         var userToUpdate = userProfileRepo.findByOnlineId(request.getOnlineId())
                 .orElse(UserProfile.builder()
+                        .onlineId(request.getOnlineId())
                         .email(request.getEmail())
                         .displayName(request.getDisplayName())
                         .build());

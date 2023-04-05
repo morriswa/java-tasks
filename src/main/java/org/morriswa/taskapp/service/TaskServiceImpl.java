@@ -5,7 +5,7 @@ import org.morriswa.taskapp.entity.Planner;
 import org.morriswa.taskapp.entity.Task;
 import org.morriswa.taskapp.enums.TaskStatus;
 import org.morriswa.taskapp.enums.TaskType;
-import org.morriswa.taskapp.exception.BadRequestException;
+import org.morriswa.common.model.BadRequestException;
 import org.morriswa.taskapp.exception.RequestFailedException;
 import org.morriswa.taskapp.model.PlannerRequest;
 import org.morriswa.taskapp.model.TaskRequest;
@@ -15,9 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.MissingRequestValueException;
 
-import javax.validation.ConstraintViolationException;
-import javax.validation.Valid;
-import javax.validation.Validator;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Valid;
+import jakarta.validation.Validator;
 import java.util.GregorianCalendar;
 import java.util.Map;
 import java.util.Set;
@@ -103,7 +103,8 @@ public class TaskServiceImpl implements TaskService {
 
         var plannerBuilder = Planner.builder()
                 .onlineId(newPlannerRequest.getOnlineId())
-                .name(newPlannerRequest.getName());
+                .name(newPlannerRequest.getName())
+                .creationDate(new GregorianCalendar());
 
         if (!StringUtils.isBlank(newPlannerRequest.getGoal())) {
             plannerBuilder.goal(newPlannerRequest.getGoal());
@@ -171,9 +172,9 @@ public class TaskServiceImpl implements TaskService {
 
     // Task Actions
     @Override
-    public Planner taskAdd(@Valid TaskRequest request) throws Exception {
-        Planner planner = plannerRepo.findByIdAndOnlineId(request.getPlannerId(), request.getOnlineId())
-                .orElseThrow(noPlannerFoundException(request.getPlannerId(), request.getOnlineId()));
+    public Set<Task> taskAdd(@Valid TaskRequest request) throws Exception {
+//        Planner planner = plannerRepo.findByIdAndOnlineId(request.getPlannerId(), request.getOnlineId())
+//                .orElseThrow(noPlannerFoundException(request.getPlannerId(), request.getOnlineId()));
 
         var taskBuilder = Task.builder()
                 .onlineId(request.getOnlineId())
@@ -232,8 +233,7 @@ public class TaskServiceImpl implements TaskService {
         if (!newTaskViolations.isEmpty()) throw new ConstraintViolationException(newTaskViolations);
 
         taskRepo.save(newTask);
-        return plannerRepo.findByIdAndOnlineId(request.getPlannerId(), request.getOnlineId())
-                .orElseThrow(noPlannerFoundException(newTask.getPlannerId(), newTask.getOnlineId()));
+        return taskRepo.findAllByPlannerIdAndOnlineId(request.getPlannerId(), request.getOnlineId());
     }
 
     @Override

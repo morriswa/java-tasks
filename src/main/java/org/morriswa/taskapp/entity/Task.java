@@ -4,9 +4,9 @@ import lombok.*;
 import org.morriswa.taskapp.enums.TaskStatus;
 import org.morriswa.taskapp.enums.TaskType;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.util.GregorianCalendar;
 
 @Entity @Table(name = "task")
@@ -22,7 +22,6 @@ public class Task implements Comparable<Task> {
     @Column(name = "online_id",nullable = false,updatable = false)
     private String onlineId;
 
-    @ManyToOne
     @Column(name = "planner_id")
     private Long plannerId;
 
