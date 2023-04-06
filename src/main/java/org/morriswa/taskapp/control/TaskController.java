@@ -5,7 +5,6 @@ import org.morriswa.common.model.DefaultResponse;
 import org.morriswa.taskapp.entity.Planner;
 import org.morriswa.taskapp.entity.Task;
 import org.morriswa.taskapp.entity.UserProfile;
-import org.morriswa.taskapp.exception.AuthenticationFailedException;
 import org.morriswa.taskapp.model.PlannerRequest;
 import org.morriswa.taskapp.model.PlannerResponse;
 import org.morriswa.taskapp.model.TaskRequest;
@@ -52,7 +51,7 @@ public class TaskController {
 
     @GetMapping(path = "login")
     public ResponseEntity<?> login(JwtAuthenticationToken token)
-            throws AuthenticationFailedException, BadRequestException {
+            throws BadRequestException {
         UserProfile newUser = userProfileService.getUserProfile(token.getName());
 
 
@@ -82,8 +81,7 @@ public class TaskController {
 
     @GetMapping(path = "planners")
     public ResponseEntity<?> getAllPlanners( JwtAuthenticationToken token,
-                                             @RequestHeader String email) throws AuthenticationFailedException
-    {
+                                             @RequestHeader String email) {
         Set<Planner> planners = this.taskService.getAllPlanners(token.getName());
 
         return ResponseEntity.ok().body(DefaultResponse.builder()

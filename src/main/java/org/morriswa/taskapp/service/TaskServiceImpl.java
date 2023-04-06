@@ -1,30 +1,25 @@
 package org.morriswa.taskapp.service;
 
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Valid;
+import jakarta.validation.Validator;
 import org.apache.commons.lang3.StringUtils;
+import org.morriswa.common.model.BadRequestException;
 import org.morriswa.taskapp.entity.Planner;
 import org.morriswa.taskapp.entity.Task;
-import org.morriswa.taskapp.enums.TaskStatus;
-import org.morriswa.taskapp.enums.TaskType;
-import org.morriswa.common.model.BadRequestException;
-import org.morriswa.taskapp.exception.RequestFailedException;
-import org.morriswa.taskapp.model.PlannerRequest;
-import org.morriswa.taskapp.model.PlannerResponse;
-import org.morriswa.taskapp.model.TaskRequest;
+import org.morriswa.taskapp.model.*;
 import org.morriswa.taskapp.repo.PlannerRepo;
 import org.morriswa.taskapp.repo.TaskRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.MissingRequestValueException;
 
-import jakarta.validation.ConstraintViolationException;
-import jakarta.validation.Valid;
-import jakarta.validation.Validator;
 import java.util.GregorianCalendar;
 import java.util.Map;
 import java.util.Set;
 
-import static org.morriswa.taskapp.exception.CustomExceptionSupply.noPlannerFoundException;
-import static org.morriswa.taskapp.exception.CustomExceptionSupply.noTaskFoundException;
+import static org.morriswa.taskapp.exception.TaskApiExceptionSupply.noPlannerFoundException;
+import static org.morriswa.taskapp.exception.TaskApiExceptionSupply.noTaskFoundException;
 
 @Service
 public class TaskServiceImpl implements TaskService {
@@ -107,7 +102,7 @@ public class TaskServiceImpl implements TaskService {
         if (plannerRepo.existsByOnlineIdAndName(
                 newPlannerRequest.getOnlineId(),
                 newPlannerRequest.getName()))
-            throw new RequestFailedException(
+            throw new BadRequestException(
                     String.format(
                             "Planner with name %s already exists for user %s",
                             newPlannerRequest.getName(),

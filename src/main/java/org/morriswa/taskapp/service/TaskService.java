@@ -15,7 +15,6 @@ public interface TaskService {
     // Planner Actions
     Planner getPlanner(String onlineId, Long plannerId) throws Exception;
     PlannerResponse getPlannerWithTasks(String onlineId, Long plannerId) throws BadRequestException;
-
     Set<Planner> getAllPlanners(String onlineId);
     Set<Planner> plannerAdd(@Valid PlannerRequest newPlannerRequest) throws Exception;
     Set<Planner> plannerDel(@Valid PlannerRequest request) throws Exception;

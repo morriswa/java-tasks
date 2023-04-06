@@ -4,8 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.morriswa.taskapp.enums.TaskStatus;
-import org.morriswa.taskapp.enums.TaskType;
 
 import jakarta.validation.constraints.NotBlank;
 

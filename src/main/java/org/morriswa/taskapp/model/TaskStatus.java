@@ -1,4 +1,4 @@
-package org.morriswa.taskapp.enums;
+package org.morriswa.taskapp.model;
 
 public enum TaskStatus {
     BACKLOG(-1),

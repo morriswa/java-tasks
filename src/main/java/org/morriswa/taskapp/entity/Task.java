@@ -1,8 +1,8 @@
 package org.morriswa.taskapp.entity;
 
 import lombok.*;
-import org.morriswa.taskapp.enums.TaskStatus;
-import org.morriswa.taskapp.enums.TaskType;
+import org.morriswa.taskapp.model.TaskStatus;
+import org.morriswa.taskapp.model.TaskType;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
