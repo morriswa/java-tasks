@@ -37,10 +37,10 @@ public class UserProfile implements Serializable
     @Length(max = 40)
     private String nameLast;
 
-    @NotBlank
+//    @NotBlank
     @Pattern(regexp = "^[a-zA-Z0-9_.-]*$")
     @Length(max=16)
-    @Column(name = "display_name",unique = true, nullable = false)
+    @Column(name = "display_name",unique = true)
     private String displayName;
     private String pronouns;
 }

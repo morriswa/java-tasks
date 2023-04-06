@@ -80,8 +80,7 @@ public class TaskController {
     }
 
     @GetMapping(path = "planners")
-    public ResponseEntity<?> getAllPlanners( JwtAuthenticationToken token,
-                                             @RequestHeader String email) {
+    public ResponseEntity<?> getAllPlanners(JwtAuthenticationToken token) {
         Set<Planner> planners = this.taskService.getAllPlanners(token.getName());
 
         return ResponseEntity.ok().body(DefaultResponse.builder()
