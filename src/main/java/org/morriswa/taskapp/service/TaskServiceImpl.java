@@ -8,6 +8,7 @@ import org.morriswa.taskapp.enums.TaskType;
 import org.morriswa.common.model.BadRequestException;
 import org.morriswa.taskapp.exception.RequestFailedException;
 import org.morriswa.taskapp.model.PlannerRequest;
+import org.morriswa.taskapp.model.PlannerResponse;
 import org.morriswa.taskapp.model.TaskRequest;
 import org.morriswa.taskapp.repo.PlannerRepo;
 import org.morriswa.taskapp.repo.TaskRepo;
@@ -80,6 +81,17 @@ public class TaskServiceImpl implements TaskService {
     public Planner getPlanner(String onlineId, Long plannerId) throws Exception {
         return plannerRepo.findByIdAndOnlineId(plannerId, onlineId)
                 .orElseThrow(noPlannerFoundException(plannerId,onlineId));
+    }
+
+    @Override
+    public PlannerResponse getPlannerWithTasks(String onlineId, Long plannerId) throws BadRequestException {
+        Planner planner = plannerRepo.findByIdAndOnlineId(plannerId, onlineId)
+                .orElseThrow(noPlannerFoundException(plannerId,onlineId));
+        Set<Task> tasks = taskRepo.findAllByPlannerIdAndOnlineId(plannerId,onlineId);
+        return PlannerResponse.builder()
+                .plannerInfo(planner)
+                .tasks(tasks)
+                .build();
     }
 
     @Override
@@ -173,9 +185,6 @@ public class TaskServiceImpl implements TaskService {
     // Task Actions
     @Override
     public Set<Task> taskAdd(@Valid TaskRequest request) throws Exception {
-//        Planner planner = plannerRepo.findByIdAndOnlineId(request.getPlannerId(), request.getOnlineId())
-//                .orElseThrow(noPlannerFoundException(request.getPlannerId(), request.getOnlineId()));
-
         var taskBuilder = Task.builder()
                 .onlineId(request.getOnlineId())
                 .plannerId(request.getPlannerId())
@@ -296,4 +305,5 @@ public class TaskServiceImpl implements TaskService {
         if (!taskViolations.isEmpty()) throw new ConstraintViolationException(taskViolations);
         taskRepo.save(toUpdate);
     }
+
 }

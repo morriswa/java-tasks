@@ -6,6 +6,7 @@ import org.morriswa.taskapp.entity.Task;
 import org.morriswa.taskapp.entity.UserProfile;
 import org.morriswa.taskapp.exception.AuthenticationFailedException;
 import org.morriswa.taskapp.model.PlannerRequest;
+import org.morriswa.taskapp.model.PlannerResponse;
 import org.morriswa.taskapp.model.TaskRequest;
 import org.morriswa.taskapp.model.UserProfileRequest;
 import org.morriswa.taskapp.service.TaskService;
@@ -70,11 +71,11 @@ public class TaskController {
     public ResponseEntity<?> getPlanner(JwtAuthenticationToken token,
                                         @RequestParam Optional<Long> id) throws Exception {
         var plannerId = id.orElse(null);
-        Planner planner = this.taskService.getPlanner(token.getName(),plannerId);
+        PlannerResponse planner = this.taskService.getPlannerWithTasks(token.getName(),plannerId);
 
-        Map<String, Object> response = new HashMap<>(){{
+        var response = new HashMap<String,Object>(){{
             put("message","Successfully retrieved Planner...");
-            put("planner",planner);
+            put("payload",planner);
         }};
         return ResponseEntity.ok().body(response);
     }
