@@ -1,6 +1,7 @@
 package org.morriswa.taskapp.control;
 
 import org.morriswa.common.model.BadRequestException;
+import org.morriswa.common.model.DefaultResponse;
 import org.morriswa.taskapp.entity.Planner;
 import org.morriswa.taskapp.entity.Task;
 import org.morriswa.taskapp.entity.UserProfile;
@@ -18,10 +19,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.web.bind.MissingRequestValueException;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @SuppressWarnings("unused")
 @RestController @CrossOrigin
@@ -29,6 +27,7 @@ import java.util.Set;
 public class TaskController {
     private final TaskService taskService;
     private final UserProfileService userProfileService;
+
     @Autowired
     public TaskController(TaskService s, UserProfileService u, Environment e) {
         this.taskService = s;
@@ -42,13 +41,13 @@ public class TaskController {
         request.setOnlineId(token.getName());
         this.userProfileService.updateUserProfile(request);
 
-        Map<String, Object> response = new HashMap<>(){{
-           put("message",
-                   String.format("User with email %s, ID %S registered successfully.",
-                   request.getEmail(),
-                   request.getOnlineId()));
-        }};
-        return ResponseEntity.ok().body(response);
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message(
+                    String.format("User with email %s, ID %S registered successfully.",
+                        request.getEmail(),
+                        request.getOnlineId()))
+                .build());
     }
 
     @GetMapping(path = "login")
@@ -56,13 +55,14 @@ public class TaskController {
             throws AuthenticationFailedException, BadRequestException {
         UserProfile newUser = userProfileService.getUserProfile(token.getName());
 
-        Map<String, Object> response = new HashMap<>(){{
-            put("message",
+
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message(
                     String.format("User with email %s, ID %S authenticated successfully.",
-                    newUser.getEmail(),
-                    newUser.getOnlineId()));
-        }};
-        return ResponseEntity.ok().body(response);
+                        newUser.getEmail(),
+                        newUser.getOnlineId()))
+                .build());
     }
 
 
@@ -73,11 +73,11 @@ public class TaskController {
         var plannerId = id.orElse(null);
         PlannerResponse planner = this.taskService.getPlannerWithTasks(token.getName(),plannerId);
 
-        var response = new HashMap<String,Object>(){{
-            put("message","Successfully retrieved Planner...");
-            put("payload",planner);
-        }};
-        return ResponseEntity.ok().body(response);
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message("Successfully retrieved Planner...")
+                .payload(planner)
+                .build());
     }
 
     @GetMapping(path = "planners")
@@ -85,11 +85,12 @@ public class TaskController {
                                              @RequestHeader String email) throws AuthenticationFailedException
     {
         Set<Planner> planners = this.taskService.getAllPlanners(token.getName());
-        Map<String, Object> response = new HashMap<>(){{
-            put("message","Successfully retrieved all Planners...");
-            put("planners",planners);
-        }};
-        return ResponseEntity.ok().body(response);
+
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message("Successfully retrieved all Planners...")
+                .payload(planners)
+                .build());
     }
 
     @PostMapping(path = "planner")
@@ -98,11 +99,12 @@ public class TaskController {
     {
         request.setOnlineId(token.getName());
         Set<Planner> planners = this.taskService.plannerAdd(request);
-        Map<String, Object> response = new HashMap<>(){{
-            put("message","Successfully added Planner...");
-            put("planners",planners);
-        }};
-        return ResponseEntity.ok().body(response);
+
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message("Successfully added Planner...")
+                .payload(planners)
+                .build());
     }
 
     @DeleteMapping(path = "planner")
@@ -111,11 +113,12 @@ public class TaskController {
     {
         request.setOnlineId(token.getName());
         Set<Planner> planners = this.taskService.plannerDel(request);
-        Map<String, Object> response = new HashMap<>(){{
-            put("message","Successfully deleted Planner...");
-            put("planners",planners);
-        }};
-        return ResponseEntity.ok().body(response);
+
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message("Successfully deleted Planner...")
+                .payload(planners)
+                .build());
     }
 
     @PatchMapping(path = "planner")
@@ -124,11 +127,12 @@ public class TaskController {
             throws MissingRequestValueException, BadRequestException {
         request.setOnlineId(token.getName());
         Planner planner = this.taskService.updatePlanner(request);
-        Map<String, Object> response = new HashMap<>(){{
-            put("message","Successfully updated Planner...");
-            put("planner",planner);
-        }};
-        return ResponseEntity.ok().body(response);
+
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message("Successfully updated Planner...")
+                .payload(planner)
+                .build());
     }
 
 
@@ -139,11 +143,12 @@ public class TaskController {
     {
         request.setOnlineId(token.getName());
         Set<Task> tasks = this.taskService.taskAdd(request);
-        Map<String, Object> response = new HashMap<>(){{
-            put("message","Successfully added Task...");
-            put("tasks",tasks);
-        }};
-        return ResponseEntity.ok().body(response);
+
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message("Successfully added Task...")
+                .payload(tasks)
+                .build());
     }
 
     @DeleteMapping(path = "task")
@@ -152,10 +157,11 @@ public class TaskController {
     {
         request.setOnlineId(token.getName());
         this.taskService.taskDel(request);
-        Map<String, Object> response = new HashMap<>(){{
-            put("message","Successfully deleted Task...");
-        }};
-        return ResponseEntity.ok().body(response);
+
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message("Successfully deleted Task...")
+                .build());
     }
 
     @PatchMapping(path = "task")
@@ -163,9 +169,10 @@ public class TaskController {
                                      @RequestBody TaskRequest request) throws Exception {
         request.setOnlineId(token.getName());
         this.taskService.updateTask(request);
-        Map<String, Object> response = new HashMap<>() {{
-            put("message", "Successfully updated Task...");
-        }};
-        return ResponseEntity.ok().body(response);
+
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message("Successfully updated Task...")
+                .build());
     }
 }
