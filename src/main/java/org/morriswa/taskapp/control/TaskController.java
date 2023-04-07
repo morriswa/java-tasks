@@ -1,268 +1,173 @@
 package org.morriswa.taskapp.control;
 
-import org.morriswa.taskapp.entity.CustomAuth0User;
+import org.morriswa.common.model.BadRequestException;
+import org.morriswa.common.model.DefaultResponse;
 import org.morriswa.taskapp.entity.Planner;
+import org.morriswa.taskapp.entity.Task;
 import org.morriswa.taskapp.entity.UserProfile;
-import org.morriswa.taskapp.exception.AuthenticationFailedException;
-import org.morriswa.taskapp.exception.BadRequestException;
-import org.morriswa.taskapp.exception.RegistrationFailedException;
-import org.morriswa.taskapp.service.CustomAuthService;
+import org.morriswa.taskapp.model.PlannerRequest;
+import org.morriswa.taskapp.model.PlannerResponse;
+import org.morriswa.taskapp.model.TaskRequest;
+import org.morriswa.taskapp.model.UserProfileRequest;
 import org.morriswa.taskapp.service.TaskService;
+import org.morriswa.taskapp.service.UserProfileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.MissingRequestValueException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.context.request.WebRequest;
 
-import java.security.Principal;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @SuppressWarnings("unused")
 @RestController @CrossOrigin
 @RequestMapping(path = "${server.path}")
 public class TaskController {
-    private final CustomAuthService authService;
     private final TaskService taskService;
-    private final Environment env;
-
+    private final UserProfileService userProfileService;
 
     @Autowired
-    public TaskController(CustomAuthService a,TaskService s,Environment e) {
-        this.authService = a;
+    public TaskController(TaskService s, UserProfileService u, Environment e) {
         this.taskService = s;
-        this.env = e;
+        this.userProfileService = u;
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> internalServerError(Exception e, WebRequest r) {
-        boolean include_stack = "TRUE".equals(env.getProperty("server.debug"));
-        Map<String, Object> response = new HashMap<>(){{
-            put("error", e.getMessage());
-            if (include_stack) {
-                put("stack",e);
-            }
-        }};
-
-        return ResponseEntity.internalServerError().body(response);
-    }
-
-    @ExceptionHandler({
-            AuthenticationFailedException.class // thrown when user ID and email do not match
-    })
-    public ResponseEntity<?> unauthorized(Exception e, WebRequest r) {
-        Map<String, Object> response = new HashMap<>(){{
-            put("error", e.getMessage());
-        }};
-        return ResponseEntity.status(401).body(response);
-    }
-
-//    @ExceptionHandler({
-//            AccessDeniedException.class, // default exception thrown when @PreAuthorize queries fail...
-//    })
-//    public ResponseEntity<?> forbidden(Exception e, WebRequest r) {
-//        Map<String, Object> response = new HashMap<>(){{
-//            put("error", "Insufficient Scope...");
-//            put("message", e.getMessage());
-//            put("timestamp", new GregorianCalendar().toZonedDateTime().toString());
-//        }};
-//        return ResponseEntity.status(403).body(response);
-//    }
-
-    @ExceptionHandler({
-            BadRequestException.class,
-            MissingRequestValueException.class
-    })
-    public ResponseEntity<?> badRequest(Exception e, WebRequest r) {
-        boolean include_stack = "TRUE".equals(env.getProperty("server.debug"));
-        Map<String, Object> response = new HashMap<>(){{
-            put("error", e.getMessage());
-            if (include_stack) {
-                put("stack",e);
-            }
-        }};
-
-        return ResponseEntity.badRequest().body(response);
-    }
-
-
-    // LOGIN ENDPOINTS
+    // User Profile ENDPOINTS
     @PostMapping(path = "login")
-    public ResponseEntity<?> registerUser(Principal principal, @RequestHeader String email)
-            throws RegistrationFailedException, AuthenticationFailedException
-    {
-        CustomAuth0User newUser = this.authService.registerFlow(principal,email);
-        CustomAuth0User confirmNewUser = this.authService.loginFlow(principal,email);
+    public ResponseEntity<?> registerUser(JwtAuthenticationToken token,
+                                          @RequestBody UserProfileRequest request) {
+        request.setOnlineId(token.getName());
+        this.userProfileService.updateUserProfile(request);
 
-        Map<String, Object> response = new HashMap<>(){{
-           put("message",
-                   String.format("User with email %s, ID %S registered successfully.",
-                   confirmNewUser.getEmail(),
-                   confirmNewUser.getOnlineId()));
-        }};
-        return ResponseEntity.ok().body(response);
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message(
+                    String.format("User with email %s, ID %S registered successfully.",
+                        request.getEmail(),
+                        request.getOnlineId()))
+                .build());
     }
 
     @GetMapping(path = "login")
-    public ResponseEntity<?> login(Principal principal, @RequestHeader String email)
-            throws AuthenticationFailedException
-    {
-        CustomAuth0User newUser = this.authService.loginFlow(principal,email);
+    public ResponseEntity<?> login(JwtAuthenticationToken token) throws BadRequestException {
+        UserProfile newUser = userProfileService.getUserProfile(token.getName());
 
-        Map<String, Object> response = new HashMap<>(){{
-            put("message",
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message(
                     String.format("User with email %s, ID %S authenticated successfully.",
-                    newUser.getEmail(),
-                    newUser.getOnlineId()));
-        }};
-        return ResponseEntity.ok().body(response);
-    }
-
-
-    // PROFILE ENDPOINTS
-    @GetMapping(path = "profile")
-    public ResponseEntity<?> getUserProfile(Principal principal, @RequestHeader String email)
-            throws AuthenticationFailedException {
-
-        CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
-        UserProfile profile = this.taskService.profileGet(authenticatedUser);
-
-        Map<String, Object> response = new HashMap<>(){{
-            put("message","Successfully retrieved UserProfile...");
-            put("profile",profile);
-        }};
-        return ResponseEntity.ok().body(response);
-    }
-
-    @PatchMapping(path = "profile")
-    public ResponseEntity<?> updateUserProfile(Principal principal,
-                                               @RequestHeader String email,
-                                               @RequestBody Map<String,Object> request)
-            throws AuthenticationFailedException
-    {
-        CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
-        UserProfile profile = this.taskService.profileUpdate(authenticatedUser,request);
-
-        Map<String, Object> response = new HashMap<>(){{
-            put("message","Successfully updated UserProfile...");
-            put("profile",profile);
-        }};
-        return ResponseEntity.ok().body(response);
+                        newUser.getEmail(),
+                        newUser.getOnlineId()))
+                .build());
     }
 
 
     // PLANNER ENDPOINTS
     @GetMapping(path = "planner")
-    public ResponseEntity<?> getPlanner(Principal principal,
-                                        @RequestHeader String email,
-                                        @RequestParam Integer id) throws Exception {
-        CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
-        Planner planner = this.taskService.getPlanner(authenticatedUser,Map.of("planner-id",id));
+    public ResponseEntity<?> getPlanner(JwtAuthenticationToken token,
+                                        @RequestParam Optional<Long> id) throws Exception {
+        var plannerId = id.orElse(null);
+        PlannerResponse planner = this.taskService.getPlannerWithTasks(token.getName(),plannerId);
 
-        Map<String, Object> response = new HashMap<>(){{
-            put("message","Successfully retrieved Planner...");
-            put("planner",planner);
-        }};
-        return ResponseEntity.ok().body(response);
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message("Successfully retrieved Planner...")
+                .payload(planner)
+                .build());
     }
 
     @GetMapping(path = "planners")
-    public ResponseEntity<?> getAllPlanners( Principal principal,
-                                             @RequestHeader String email) throws AuthenticationFailedException
-    {
-        CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
-        Set<Planner> planners = this.taskService.getAllPlanners(authenticatedUser);
-        Map<String, Object> response = new HashMap<>(){{
-            put("message","Successfully retrieved all Planners...");
-            put("planners",planners);
-        }};
-        return ResponseEntity.ok().body(response);
+    public ResponseEntity<?> getAllPlanners(JwtAuthenticationToken token) {
+        Set<Planner> planners = this.taskService.getAllPlanners(token.getName());
+
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message("Successfully retrieved all Planners...")
+                .payload(planners)
+                .build());
     }
 
     @PostMapping(path = "planner")
-    public ResponseEntity<?> addPlannerToProfile(Principal principal,
-                                                 @RequestHeader String email,
-                                                 @RequestBody Map<String,Object> request) throws Exception
+    public ResponseEntity<?> addPlannerToProfile(JwtAuthenticationToken token,
+                                                 @RequestBody PlannerRequest request) throws Exception
     {
-        CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
-        Set<Planner> planners = this.taskService.plannerAdd(authenticatedUser,request);
-        Map<String, Object> response = new HashMap<>(){{
-            put("message","Successfully added Planner...");
-            put("planners",planners);
-        }};
-        return ResponseEntity.ok().body(response);
+        request.setOnlineId(token.getName());
+        Set<Planner> planners = this.taskService.plannerAdd(request);
+
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message("Successfully added Planner...")
+                .payload(planners)
+                .build());
     }
 
     @DeleteMapping(path = "planner")
-    public ResponseEntity<?> plannerDel(Principal principal,
-                                                 @RequestHeader String email,
-                                                 @RequestBody Map<String,Object> request) throws Exception
+    public ResponseEntity<?> plannerDel(JwtAuthenticationToken token,
+                                        @RequestBody PlannerRequest request) throws Exception
     {
-        CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
-        Set<Planner> planners = this.taskService.plannerDel(authenticatedUser,request);
-        Map<String, Object> response = new HashMap<>(){{
-            put("message","Successfully deleted Planner...");
-            put("planners",planners);
-        }};
-        return ResponseEntity.ok().body(response);
+        request.setOnlineId(token.getName());
+        Set<Planner> planners = this.taskService.plannerDel(request);
+
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message("Successfully deleted Planner...")
+                .payload(planners)
+                .build());
     }
 
     @PatchMapping(path = "planner")
-    public ResponseEntity<?> updatePlanner(Principal principal,
-                                        @RequestHeader String email,
-                                        @RequestBody Map<String,Object> request)
-            throws AuthenticationFailedException, MissingRequestValueException, BadRequestException {
-        CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
-        Planner planner = this.taskService.updatePlanner(authenticatedUser,request);
-        Map<String, Object> response = new HashMap<>(){{
-            put("message","Successfully updated Planner...");
-            put("planner",planner);
-        }};
-        return ResponseEntity.ok().body(response);
+    public ResponseEntity<?> updatePlanner( JwtAuthenticationToken token,
+                                            @RequestBody PlannerRequest request)
+            throws MissingRequestValueException, BadRequestException {
+        request.setOnlineId(token.getName());
+        Planner planner = this.taskService.updatePlanner(request);
+
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message("Successfully updated Planner...")
+                .payload(planner)
+                .build());
     }
 
 
     // TASK ENDPOINTS
     @PostMapping(path = "task")
-    public ResponseEntity<?> addTask(Principal principal,
-                                               @RequestHeader String email,
-                                               @RequestBody Map<String,Object> request) throws Exception
+    public ResponseEntity<?> addTask(JwtAuthenticationToken token,
+                                               @RequestBody TaskRequest request) throws Exception
     {
-        CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
-        Planner planner = this.taskService.taskAdd(authenticatedUser,request);
-        Map<String, Object> response = new HashMap<>(){{
-            put("message","Successfully added Task...");
-            put("planner",planner);
-        }};
-        return ResponseEntity.ok().body(response);
+        request.setOnlineId(token.getName());
+        Set<Task> tasks = this.taskService.taskAdd(request);
+
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message("Successfully added Task...")
+                .payload(tasks)
+                .build());
     }
 
     @DeleteMapping(path = "task")
-    public ResponseEntity<?> delTask(Principal principal,
-                                     @RequestHeader String email,
-                                     @RequestBody Map<String,Object> request) throws Exception
+    public ResponseEntity<?> delTask(JwtAuthenticationToken token,
+                                     @RequestBody TaskRequest request) throws Exception
     {
-        CustomAuth0User authenticatedUser = this.authService.loginFlow(principal,email);
-        Planner planner = this.taskService.taskDel(authenticatedUser,request);
-        Map<String, Object> response = new HashMap<>(){{
-            put("message","Successfully deleted Task...");
-            put("planner",planner);
-        }};
-        return ResponseEntity.ok().body(response);
+        request.setOnlineId(token.getName());
+        this.taskService.taskDel(request);
+
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message("Successfully deleted Task...")
+                .build());
     }
 
     @PatchMapping(path = "task")
-    public ResponseEntity<?> updateTask(Principal principal,
-                                     @RequestHeader String email,
-                                     @RequestBody Map<String,Object> request) throws Exception {
-        CustomAuth0User authenticatedUser = this.authService.loginFlow(principal, email);
-        Planner planner = this.taskService.updateTask(authenticatedUser, request);
-        Map<String, Object> response = new HashMap<>() {{
-            put("message", "Successfully updated Task...");
-            put("planner", planner);
-        }};
-        return ResponseEntity.ok().body(response);
+    public ResponseEntity<?> updateTask(JwtAuthenticationToken token,
+                                     @RequestBody TaskRequest request) throws Exception {
+        request.setOnlineId(token.getName());
+        this.taskService.updateTask(request);
+
+        return ResponseEntity.ok().body(DefaultResponse.builder()
+                .timestamp(new GregorianCalendar())
+                .message("Successfully updated Task...")
+                .build());
     }
 }

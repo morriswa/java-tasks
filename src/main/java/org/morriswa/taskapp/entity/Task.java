@@ -1,14 +1,15 @@
 package org.morriswa.taskapp.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
-import org.morriswa.taskapp.enums.TaskStatus;
-import org.morriswa.taskapp.enums.TaskType;
+import org.morriswa.taskapp.model.TaskStatus;
+import org.morriswa.taskapp.model.TaskType;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.util.GregorianCalendar;
 
-@Entity @Table(name = "Tasks")
+@Entity @Table(name = "task")
 @AllArgsConstructor @NoArgsConstructor
 @Getter @Setter @Builder
 public class Task implements Comparable<Task> {
@@ -17,12 +18,19 @@ public class Task implements Comparable<Task> {
     @GeneratedValue(generator = "task_seq", strategy = GenerationType.AUTO)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "planner_id", referencedColumnName = "planner_id")
-    @JsonIgnore
-    private Planner planner;
+    @NotBlank
+    @Column(name = "online_id",nullable = false,updatable = false)
+    private String onlineId;
+
+    @Column(name = "planner_id")
+    private Long plannerId;
+
+    @NotBlank
     private String title;
+
+    @NotNull
     private GregorianCalendar creationDate = new GregorianCalendar();
+
     private GregorianCalendar startDate;
     private GregorianCalendar dueDate;
     private GregorianCalendar completedDate;
@@ -31,26 +39,6 @@ public class Task implements Comparable<Task> {
     private String description = "";
     private TaskStatus status = TaskStatus.NEW;
     private TaskType type = TaskType.TASK;
-//
-//    public Task(String title,
-//                GregorianCalendar startDate,
-//                GregorianCalendar finishDate) {
-//        this.title = title;
-//        this.startDate = startDate;
-//        this.dueDate = finishDate;
-//    }
-//
-//    public Task(String title,
-//                GregorianCalendar startDate,
-//                GregorianCalendar finishDate,
-//                TaskType type,
-//                String description) {
-//        this.title = title;
-//        this.startDate = startDate;
-//        this.dueDate = finishDate;
-//        this.type = type;
-//        this.description = description;
-//    }
 
     @Override
     public int compareTo(Task o) {
