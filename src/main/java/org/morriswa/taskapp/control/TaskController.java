@@ -50,10 +50,8 @@ public class TaskController {
     }
 
     @GetMapping(path = "login")
-    public ResponseEntity<?> login(JwtAuthenticationToken token)
-            throws BadRequestException {
+    public ResponseEntity<?> login(JwtAuthenticationToken token) throws BadRequestException {
         UserProfile newUser = userProfileService.getUserProfile(token.getName());
-
 
         return ResponseEntity.ok().body(DefaultResponse.builder()
                 .timestamp(new GregorianCalendar())

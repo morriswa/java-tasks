@@ -157,7 +157,7 @@ public class TaskServiceImpl implements TaskService {
         }
 
         if (!StringUtils.isBlank(request.getGoal())) {
-            planner.setGoal(planner.getGoal());
+            planner.setGoal(request.getGoal());
         }
 
         if (request.getStartDate() != null) {
